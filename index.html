@@ -79,8 +79,6 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
   button.big{height:54px;font-size:16px}
   .hint{font-size:10.5px}
 }
-#toast{position:fixed;left:12px;right:12px;bottom:calc(120px + env(safe-area-inset-bottom));max-width:616px;margin:0 auto;background:#1b1b2c;border:1px solid var(--acc);color:#fff;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.4;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;box-shadow:0 6px 24px #000c}
-#toast.show{opacity:1}
 </style>
 </head>
 <body>
@@ -172,11 +170,6 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
     <button id="micBtn">🎤 MIC: OFF</button>
     <button id="monBtn">🔈 Pakinggan: ON</button>
   </div>
-  <div class="row" style="margin-top:8px">
-    <button id="btBtn" style="height:48px;font-size:13px">🎧 Bluetooth: OFF</button>
-    <button id="btSet" style="height:48px;font-size:13px">⚙ Bluetooth settings</button>
-  </div>
-  <div class="hint" id="btStatus">I-pair muna ang headphone sa ⚙ Bluetooth settings, tapos i-ON ang 🎧 Bluetooth.</div>
   <div class="row" style="margin-top:8px"><button id="micMonBtn" style="height:48px;font-size:13px">🎧 Marinig ang Mic: OFF</button></div>
   <div class="hint">Para marinig ang boses at echo mo: ikonekta muna ang Bluetooth/headphone sa Bluetooth settings ng phone, tapos i-ON ito. May maririnig kang \"pip\" kapag nag-ON; kapag narinig mo iyon, gumagana ang Bluetooth. Huwag gamitin sa speaker ng phone (magfi-feedback).</div>
   <label>Echo ng Mic: <b id="echov">25%</b></label>
@@ -439,7 +432,6 @@ async function toggleMic() {
     micStream.getTracks().forEach((t) => t.stop());
     micSrc.disconnect(); micStream = null; micSrc = null;
     btn.textContent = '🎤 MIC: OFF'; btn.classList.remove('on');
-    setTimeout(btApply, 300);
     return;
   }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -469,7 +461,6 @@ async function toggleMic() {
   micSrc.connect(micIn);
   btn.textContent = '🎤 MIC: ON'; btn.classList.add('on');
   micMonLabel();
-  setTimeout(btApply, 700);
 }
 $('#micBtn').onclick = toggleMic;
 
@@ -546,7 +537,6 @@ async function reopenMic() {              // habang nagmo-monitor, patay ang ech
   try {
     micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !micMonOn, noiseSuppression: !micMonOn, autoGainControl: false } });
     micSrc = ctx.createMediaStreamSource(micStream); micSrc.connect(micIn);
-    setTimeout(btApply, 700);
   } catch (e) {
     $('#micBtn').textContent = '🎤 MIC: OFF'; $('#micBtn').classList.remove('on');
     alert('Hindi na mabuksan ulit ang mic: ' + (e.message || e));
@@ -560,52 +550,6 @@ $('#micMonBtn').onclick = async () => {
   micMonLabel();
   await reopenMic();
   micMonLabel();
-};
-
-// BLUETOOTH (native plugin na AudioRoute sa APK)
-const AudioRoute = window.Capacitor && Capacitor.registerPlugin ? Capacitor.registerPlugin('AudioRoute') : null;
-let btOn = false;
-function toast(t) {
-  let el = $('#toast');
-  if (!el) { el = document.createElement('div'); el.id = 'toast'; document.body.appendChild(el); }
-  el.textContent = t; el.className = 'show';
-  clearTimeout(toast.t); toast.t = setTimeout(() => { el.className = ''; }, 5000);
-}
-const btMsg = (t) => { $('#btStatus').textContent = t; toast(t); };
-const NOPLUGIN = 'Wala pa ang Bluetooth plugin sa APK mo. I-rebuild ang APK sa GitHub gamit ang AudioRoutePlugin.java, tapos i-install ulit.';
-const btErr = (e) => {
-  const m = String((e && (e.message || e.code)) || e);
-  return /unimplemented|not implemented|not available/i.test(m) ? NOPLUGIN : 'Bluetooth: ' + m;
-};
-const pluginReady = () => !!AudioRoute && (!Capacitor.isPluginAvailable || Capacitor.isPluginAvailable('AudioRoute'));
-const btLabel = () => { $('#btBtn').textContent = '🎧 Bluetooth: ' + (btOn ? 'ON' : 'OFF'); $('#btBtn').classList.toggle('on', btOn); };
-if (!AudioRoute) $('#btStatus').textContent = 'Gumagana lang ang Bluetooth sa APK app.';
-else if (!pluginReady()) $('#btStatus').textContent = '⚠ ' + NOPLUGIN;
-async function btApply() {              // ilipat ang tunog sa Bluetooth habang bukas ang mic; ibalik sa normal kapag sarado
-  if (!btOn || !pluginReady()) return;
-  try { if (micStream) await AudioRoute.routeBluetooth(); else await AudioRoute.routeDefault(); }
-  catch (e) { btMsg(btErr(e)); }
-}
-$('#btSet').onclick = async () => {
-  if (!pluginReady()) { btMsg(NOPLUGIN + ' Pansamantala: i-swipe pababa ang notification bar at pindutin nang matagal ang Bluetooth.'); return; }
-  try { await AudioRoute.openSettings(); }
-  catch (e) { btMsg(btErr(e) + ' Buksan mo manual: Settings → Bluetooth.'); }
-};
-$('#btBtn').onclick = async () => {
-  if (btOn) {
-    btOn = false; btLabel(); btMsg('Bluetooth OFF');
-    try { await AudioRoute.routeDefault(); } catch {}
-    return;
-  }
-  if (!pluginReady()) { btMsg(NOPLUGIN); return; }
-  try {
-    const r = await AudioRoute.listDevices();
-    const names = [...new Set((r.devices || []).filter((d) => d.bluetooth).map((d) => d.name))];
-    if (!names.length) { btMsg('Walang Bluetooth na naka-connect. Pindutin ang ⚙ Bluetooth settings at i-connect ang headphone.'); return; }
-    btOn = true; btLabel();
-    btMsg('Naka-connect: ' + names.join(', ') + (micStream ? '' : ' • Buksan ang 🎤 MIC para marinig ang boses.'));
-    await btApply();
-  } catch (e) { btMsg(btErr(e)); }
 };
 
 // METER
