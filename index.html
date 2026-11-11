@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="tl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#111111">
+<title>JEIANNE FM Mixer</title>
+<script src="lame.min.js"></script>
+<style>
+  :root { --bg:#111; --panel:#1b1b1d; --line:#2c2c30; --txt:#eee; --dim:#888; --acc:#2d9cff; --live:#e5322d; --ok:#33c26b; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { margin:0; background:var(--bg); color:var(--txt); font-family:system-ui,sans-serif; padding:10px; max-width:640px; margin-inline:auto; }
+  h1 { font-size:18px; margin:4px 0 10px; text-align:center; letter-spacing:.5px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:10px; margin-bottom:10px; }
+  .decks { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .deck h2 { font-size:14px; margin:0 0 6px; color:var(--acc); }
+  .now { font-size:13px; min-height:34px; background:#0c0c0d; border-radius:8px; padding:6px; overflow:hidden; word-break:break-word; }
+  .time { font-size:11px; color:var(--dim); margin:4px 0; }
+  .btns { display:grid; grid-template-columns:repeat(4,1fr); gap:4px; margin:6px 0; }
+  button { background:#2a2a2e; color:var(--txt); border:1px solid #3a3a40; border-radius:8px; padding:9px 2px; font-size:12px; }
+  button:active { background:#3a3a40; }
+  button.on { background:var(--acc); border-color:var(--acc); color:#fff; }
+  button.big { font-size:16px; padding:14px; width:100%; font-weight:700; }
+  button.live { background:var(--live); border-color:var(--live); color:#fff; }
+  button.add { width:100%; margin-top:4px; }
+  .deck.locked .btns button:not(.lockbtn), .deck.locked .addrow, .deck.locked ul { opacity:.4; pointer-events:none; }
+  ul { list-style:none; margin:6px 0 0; padding:0; max-height:130px; overflow:auto; font-size:12px; }
+  li { padding:6px; border-bottom:1px solid var(--line); border-radius:6px; word-break:break-word; }
+  li.cur { background:#1d3550; }
+  label { display:block; font-size:12px; color:var(--dim); margin:8px 0 2px; }
+  input[type=range] { width:100%; }
+  input[type=password], input[type=text] { width:100%; padding:10px; border-radius:8px; border:1px solid #3a3a40; background:#0c0c0d; color:var(--txt); }
+  .meter { height:10px; background:#0c0c0d; border-radius:5px; overflow:hidden; margin-top:6px; }
+  .meter i { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--ok),#e5c82d 70%,var(--live)); }
+  .row { display:flex; gap:8px; align-items:center; }
+  .row > * { flex:1; }
+  #status { font-size:13px; text-align:center; margin-top:8px; color:var(--dim); min-height:18px; }
+  #status.live { color:var(--live); font-weight:700; }
+  .chk { display:flex; align-items:center; gap:8px; font-size:13px; margin-top:8px; color:var(--txt); }
+  .chk input { width:18px; height:18px; }
+  select, input[type=number] { width:100%; padding:10px; border-radius:8px; border:1px solid #3a3a40; background:#0c0c0d; color:var(--txt); font-size:14px; }
+  summary { font-weight:700; font-size:14px; padding:4px 0; }
+  .hint { font-size:11px; color:var(--dim); margin-top:8px; line-height:1.4; }
+  .addrow { display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:4px; }
+  .addrow button { width:100%; }
+</style>
+</head>
+<body>
+<h1>🎙 JEIANNE FM MIXER</h1>
+
+<div class="decks">
+  <div class="card deck" id="deck0">
+    <h2>DECK 1</h2>
+    <div class="now" id="now0">Walang kanta</div>
+    <div class="time" id="time0">0:00 / 0:00</div>
+    <div class="btns">
+      <button data-a="play">▶</button><button data-a="stop">■</button>
+      <button data-a="mute">MUTE</button><button data-a="lock" class="lockbtn">LOCK</button>
+    </div>
+    <label>Lakas</label><input type="range" min="0" max="100" value="100" data-a="vol">
+    <div class="addrow"><button data-a="add">+ Kanta</button><button data-a="folder">📁 Folder</button></div>
+    <ul id="list0"></ul>
+    <input type="file" accept="audio/*" multiple hidden id="file0"><input type="file" webkitdirectory multiple hidden id="dir0">
+  </div>
+  <div class="card deck" id="deck1">
+    <h2>DECK 2</h2>
+    <div class="now" id="now1">Walang kanta</div>
+    <div class="time" id="time1">0:00 / 0:00</div>
+    <div class="btns">
+      <button data-a="play">▶</button><button data-a="stop">■</button>
+      <button data-a="mute">MUTE</button><button data-a="lock" class="lockbtn">LOCK</button>
+    </div>
+    <label>Lakas</label><input type="range" min="0" max="100" value="100" data-a="vol">
+    <div class="addrow"><button data-a="add">+ Kanta</button><button data-a="folder">📁 Folder</button></div>
+    <ul id="list1"></ul>
+    <input type="file" accept="audio/*" multiple hidden id="file1"><input type="file" webkitdirectory multiple hidden id="dir1">
+  </div>
+</div>
+
+<div class="card">
+  <label>Crossfader (Deck 1 ⟷ Deck 2)</label>
+  <input type="range" min="0" max="100" value="50" id="cross">
+  <div class="row" style="margin-top:8px">
+    <button id="autoBtn">🔀 AUTO-MIX: OFF</button>
+    <select id="mixSec">
+      <option value="3">Crossfade 3s</option>
+      <option value="5" selected>Crossfade 5s</option>
+      <option value="8">Crossfade 8s</option>
+      <option value="12">Crossfade 12s</option>
+    </select>
+  </div>
+  <div class="hint">Kapag ON, awtomatikong magsisimula ang susunod na kanta sa kabilang deck bago matapos ang kasalukuyan.</div>
+  <label>Tracks Gain: <b id="tgdb">0.0 dB</b></label>
+  <input type="range" min="0" max="150" value="100" id="tracksGain">
+  <label>Microphone Gain: <b id="mgdb">0.0 dB</b></label>
+  <input type="range" min="0" max="200" value="100" id="micGain">
+  <div class="row" style="margin-top:8px">
+    <button id="micBtn">🎤 MIC: OFF</button>
+    <button id="monBtn">🔈 Pakinggan: ON</button>
+  </div>
+  <label class="chk"><input type="checkbox" id="duck" checked> Hinaan ang kanta kapag may mic</label>
+  <div class="meter"><i id="meter"></i></div>
+</div>
+
+<details class="card" id="out">
+  <summary>⚙ Output Settings (Encoder)</summary>
+  <label>Output mode</label>
+  <select id="o_mode">
+    <option value="icecast">Icecast Server</option>
+    <option value="shoutcast">Shoutcast Server (v1)</option>
+  </select>
+  <label>Server / Host</label>
+  <input type="text" id="o_host" placeholder="hal. stream-xx.zeno.fm" autocapitalize="off" autocomplete="off" spellcheck="false">
+  <label>Port</label>
+  <input type="number" id="o_port" inputmode="numeric" placeholder="hal. 8000">
+  <div id="o_mountbox">
+    <label>Mount point</label>
+    <input type="text" id="o_mount" placeholder="hal. /abc123" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <label>Username</label>
+    <input type="text" id="o_user" value="source" autocapitalize="off" autocomplete="off" spellcheck="false">
+  </div>
+  <label>Password</label>
+  <input type="password" id="o_pass" autocomplete="off">
+  <label>Bitrate</label>
+  <select id="o_br">
+    <option value="64k">64 kbps</option>
+    <option value="96k">96 kbps</option>
+    <option value="128k" selected>128 kbps</option>
+    <option value="192k">192 kbps</option>
+  </select>
+  <div class="hint">Naka-save lang sa phone mong ito at ginagamit kapag nag-Go Live (diretso sa server, walang relay). Para sa Shoutcast, ilagay ang source port at password na bigay ng Zeno.</div>
+</details>
+
+<div class="card">
+  <button class="big" id="liveBtn">🔴 GO LIVE</button>
+  <div id="status">Hindi pa naka-live</div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
+const master = ctx.createGain();
+const tracksGain = ctx.createGain();
+const duckGain = ctx.createGain();
+const micGain = ctx.createGain();
+const analyser = ctx.createAnalyser();
+analyser.fftSize = 512;
+const dest = ctx.createMediaStreamDestination();
+const monitor = ctx.createGain();
+
+tracksGain.connect(duckGain);
+duckGain.connect(master);
+micGain.connect(master);
+master.connect(analyser);
+master.connect(dest);
+duckGain.connect(monitor);          // ang kanta lang ang naririnig sa phone (iwas feedback sa mic)
+monitor.connect(ctx.destination);
+
+const decks = [0, 1].map((i) => {
+  const audio = new Audio();
+  audio.preload = 'auto';
+  const src = ctx.createMediaElementSource(audio);
+  const fader = ctx.createGain();
+  const cross = ctx.createGain();
+  src.connect(fader); fader.connect(cross); cross.connect(tracksGain);
+  const d = { i, audio, fader, cross, list: [], idx: -1, muted: false, locked: false, vol: 1 };
+  audio.addEventListener('ended', () => onEnded(d));
+  audio.addEventListener('timeupdate', () => {
+    $('#time' + i).textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration || 0);
+  });
+  return d;
+});
+
+function fmt(s) {
+  if (!isFinite(s)) return '0:00';
+  s = Math.floor(s);
+  return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+}
+
+function applyCross() {
+  const v = $('#cross').value / 100;
+  decks[0].cross.gain.value = Math.cos(v * Math.PI / 2);
+  decks[1].cross.gain.value = Math.cos((1 - v) * Math.PI / 2);
+}
+function applyFader(d) { d.fader.gain.value = d.muted ? 0 : d.vol; }
+
+function renderList(d) {
+  const ul = $('#list' + d.i);
+  ul.innerHTML = '';
+  d.list.forEach((f, k) => {
+    const li = document.createElement('li');
+    li.textContent = (k + 1) + '. ' + f.name.replace(/\.[^.]+$/, '');
+    if (k === d.idx) li.className = 'cur';
+    li.onclick = () => { load(d, k); play(d); };
+    ul.appendChild(li);
+  });
+}
+function load(d, k) {
+  if (k < 0 || k >= d.list.length) return;
+  d.idx = k; d.finished = false;
+  if (d.url) URL.revokeObjectURL(d.url);
+  d.url = URL.createObjectURL(d.list[k]);
+  d.audio.src = d.url;
+  $('#now' + d.i).textContent = d.list[k].name.replace(/\.[^.]+$/, '');
+  renderList(d);
+}
+function play(d) {
+  ctx.resume();
+  if (d.idx < 0 && d.list.length) load(d, 0);
+  if (autoMix && d.audio.paused && decks[1 - d.i].audio.paused && !fading) { $('#cross').value = d.i === 1 ? 100 : 0; applyCross(); }
+  if (d.audio.paused) d.audio.play().catch(() => {}); else d.audio.pause();
+  updatePlayBtn(d);
+}
+function updatePlayBtn(d) {
+  const b = document.querySelector('#deck' + d.i + ' [data-a=play]');
+  b.textContent = d.audio.paused ? '▶' : '❚❚';
+  b.classList.toggle('on', !d.audio.paused);
+}
+function next(d) {
+  if (d.idx + 1 < d.list.length) { load(d, d.idx + 1); d.audio.play().catch(() => {}); }
+  updatePlayBtn(d);
+}
+
+decks.forEach((d) => {
+  const root = $('#deck' + d.i);
+  const fileIn = $('#file' + d.i);
+  const dirIn = $('#dir' + d.i);
+  dirIn.onchange = () => {
+    const files = [...dirIn.files]
+      .filter((f) => f.type.startsWith('audio/') || /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i.test(f.name))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    dirIn.value = '';
+    if (!files.length) { alert('Walang nahanap na audio file sa folder na iyon.'); return; }
+    d.list.push(...files);
+    if (d.idx < 0) load(d, 0);
+    renderList(d);
+  };
+  fileIn.onchange = () => {
+    d.list.push(...fileIn.files);
+    fileIn.value = '';
+    if (d.idx < 0) load(d, 0);
+    renderList(d);
+  };
+  root.addEventListener('click', (e) => {
+    const a = e.target.dataset && e.target.dataset.a;
+    if (!a) return;
+    if (a === 'add') fileIn.click();
+    if (a === 'folder') dirIn.click();
+    if (a === 'play') play(d);
+    if (a === 'stop') { d.audio.pause(); d.audio.currentTime = 0; updatePlayBtn(d); }
+    if (a === 'mute') { d.muted = !d.muted; e.target.classList.toggle('on', d.muted); applyFader(d); }
+    if (a === 'lock') { d.locked = !d.locked; e.target.classList.toggle('on', d.locked); root.classList.toggle('locked', d.locked); }
+  });
+  root.querySelector('[data-a=vol]').oninput = (e) => { d.vol = e.target.value / 100; applyFader(d); };
+  d.audio.addEventListener('play', () => updatePlayBtn(d));
+  d.audio.addEventListener('pause', () => updatePlayBtn(d));
+});
+
+$('#cross').oninput = applyCross;
+applyCross();
+const dbText = (v) => (v <= 0 ? '-∞ dB' : (20 * Math.log10(v)).toFixed(1) + ' dB');
+$('#tracksGain').oninput = (e) => { const v = e.target.value / 100; tracksGain.gain.value = v; $('#tgdb').textContent = dbText(v); };
+$('#micGain').oninput = (e) => { const v = e.target.value / 100; micGain.gain.value = v; $('#mgdb').textContent = dbText(v); };
+micGain.gain.value = 1;
+
+// AUTO-MIX
+let autoMix = false, mixSec = 5, fading = false;
+function cueNext(d) {            // ihanda (hindi i-play) ang susunod na kanta ng deck
+  if (d.idx + 1 < d.list.length) { load(d, d.idx + 1); return true; }
+  d.finished = true;
+  return false;
+}
+function onEnded(d) {
+  const o = decks[1 - d.i];
+  if (autoMix && !o.audio.paused) { cueNext(d); updatePlayBtn(d); }
+  else next(d);
+}
+function mixTo(from, to) {
+  fading = true;
+  if (to.idx < 0 && to.list.length) load(to, 0);
+  to.audio.currentTime = 0;
+  to.audio.play().catch(() => {});
+  updatePlayBtn(to);
+  const slider = $('#cross');
+  const start = parseFloat(slider.value), end = to.i === 1 ? 100 : 0;
+  const t0 = performance.now(), dur = mixSec * 1000;
+  const tm = setInterval(() => {
+    const k = Math.min(1, (performance.now() - t0) / dur);
+    slider.value = start + (end - start) * k;
+    applyCross();
+    if (k >= 1) {
+      clearInterval(tm);
+      fading = false;
+      from.audio.pause();
+      cueNext(from);
+      updatePlayBtn(from);
+    }
+  }, 100);
+}
+setInterval(() => {
+  if (!autoMix || fading) return;
+  for (const d of decks) {
+    const o = decks[1 - d.i], a = d.audio;
+    if (!a.paused && isFinite(a.duration) && a.duration > mixSec * 2 &&
+        a.duration - a.currentTime <= mixSec &&
+        o.audio.paused && !o.finished && o.list.length) { mixTo(d, o); break; }
+  }
+}, 250);
+$('#autoBtn').onclick = () => {
+  autoMix = !autoMix;
+  $('#autoBtn').textContent = '🔀 AUTO-MIX: ' + (autoMix ? 'ON' : 'OFF');
+  $('#autoBtn').classList.toggle('on', autoMix);
+  const p = decks.find((x) => !x.audio.paused);
+  if (autoMix && p && !fading) { $('#cross').value = p.i === 1 ? 100 : 0; applyCross(); }
+};
+$('#mixSec').onchange = () => { mixSec = parseInt($('#mixSec').value, 10) || 5; };
+
+// MIC
+let micStream = null, micSrc = null;
+async function toggleMic() {
+  ctx.resume();
+  const btn = $('#micBtn');
+  if (micStream) {
+    micStream.getTracks().forEach((t) => t.stop());
+    micSrc.disconnect(); micStream = null; micSrc = null;
+    btn.textContent = '🎤 MIC: OFF'; btn.classList.remove('on');
+    duckGain.gain.setTargetAtTime(1, ctx.currentTime, 0.1);
+    return;
+  }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert('Hindi gumagana ang mic dito. Buksan ang mixer sa https:// link (hindi file) at sa Chrome o Safari mismo, hindi sa loob ng Facebook/Messenger/in-app browser.');
+    return;
+  }
+  try {
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
+      });
+    } catch (e1) {
+      if (e1.name === 'NotAllowedError' || e1.name === 'SecurityError' || e1.name === 'NotFoundError') throw e1;
+      micStream = await navigator.mediaDevices.getUserMedia({ audio: true });   // simpleng settings
+    }
+  } catch (err) {
+    const why = {
+      NotAllowedError: 'Naka-block ang mic. I-tap ang 🔒 sa address bar, Permissions, Microphone, Allow. Tapos i-refresh.',
+      SecurityError: 'Hindi secure ang page. Kailangan ng https:// link.',
+      NotFoundError: 'Walang nahanap na mic sa device.',
+      NotReadableError: 'Ginagamit ng ibang app ang mic. Isara muna ang ibang app (call, recorder, atbp.).',
+    }[err.name] || err.message;
+    alert('Hindi mabuksan ang mic: ' + why);
+    return;
+  }
+  micSrc = ctx.createMediaStreamSource(micStream);
+  micSrc.connect(micGain);
+  btn.textContent = '🎤 MIC: ON'; btn.classList.add('on');
+  if ($('#duck').checked) duckGain.gain.setTargetAtTime(0.3, ctx.currentTime, 0.1);
+}
+$('#micBtn').onclick = toggleMic;
+$('#duck').onchange = () => {
+  if (micStream) duckGain.gain.setTargetAtTime($('#duck').checked ? 0.3 : 1, ctx.currentTime, 0.1);
+};
+let mon = true;
+$('#monBtn').onclick = () => {
+  mon = !mon;
+  monitor.gain.value = mon ? 1 : 0;
+  $('#monBtn').textContent = '🔈 Pakinggan: ' + (mon ? 'ON' : 'OFF');
+};
+
+// METER
+const buf = new Uint8Array(analyser.fftSize);
+(function loop() {
+  analyser.getByteTimeDomainData(buf);
+  let peak = 0;
+  for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
+  $('#meter').style.width = Math.min(100, (peak / 128) * 100) + '%';
+  requestAnimationFrame(loop);
+})();
+
+// GO LIVE (APK: MP3 sa loob ng app + diretsong TCP sa Icecast/Shoutcast)
+const Tcp = window.Capacitor && Capacitor.registerPlugin ? Capacitor.registerPlugin('TcpSocket') : null;
+let ws = null, wake = null, liveSince = 0, timer = null, proc = null, enc = null, q = Promise.resolve();
+const statusEl = $('#status');
+function setStatus(t, live) { statusEl.textContent = t; statusEl.className = live ? 'live' : ''; }
+const te = (t) => new TextEncoder().encode(t);
+const b64 = (u) => { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
+const toI16 = (f) => { const o = new Int16Array(f.length); for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); o[i] = v < 0 ? v * 32768 : v * 32767; } return o; };
+function sendBytes(u) {
+  if (!ws) return;
+  q = q.then(() => Tcp.write({ data: b64(u) })).catch((e) => stopLive('Naputol ang koneksyon: ' + (e.message || e)));
+}
+function stopLive(msg) {
+  const was = ws; ws = null;
+  if (proc) { try { master.disconnect(proc); } catch {} proc.onaudioprocess = null; proc = null; }
+  enc = null; clearInterval(timer);
+  if (was && Tcp) Tcp.close().catch(() => {});
+  if (wake) { wake.release().catch(() => {}); wake = null; }
+  $('#liveBtn').textContent = '🔴 GO LIVE';
+  $('#liveBtn').classList.remove('live');
+  setStatus(msg || 'Hindi pa naka-live', false);
+}
+async function goLive() {
+  if (ws) { stopLive('Tapos na ang broadcast'); return; }
+  const c = getCfg(), miss = [];
+  if (!c.host) miss.push('Server/Host');
+  if (!c.port || isNaN(c.port) || +c.port < 1 || +c.port > 65535) miss.push('Port');
+  if (c.mode === 'icecast' && !c.mount) miss.push('Mount point');
+  if (c.mode === 'icecast' && !c.user) miss.push('Username');
+  if (!c.password) miss.push('Password');
+  if (miss.length) { $('#out').open = true; setStatus('Kulang pa: ' + miss.join(', '), false); return; }
+  if (!Tcp) { setStatus('Gumagana lang ito sa APK app, hindi sa browser', false); return; }
+  if (!window.lamejs) { setStatus('Wala ang lame.min.js (MP3 encoder)', false); return; }
+  if (!micStream && !confirm('Naka-OFF ang mic mo. Mag-live pa rin nang walang boses?')) { setStatus('Buksan muna ang 🎤 MIC', false); return; }
+  await ctx.resume();
+  setStatus('Kumokonekta...', false);
+  ws = {}; q = Promise.resolve();
+  const br = parseInt(c.bitrate, 10) || 128;
+  try {
+    await Tcp.connect({ host: c.host, port: parseInt(c.port, 10) });
+    const rd = async (ms) => (await Tcp.read({ timeoutMs: ms })).text || '';
+    if (c.mode === 'shoutcast') {
+      await Tcp.write({ data: b64(te(c.password + '\r\n')) });
+      if (!/OK2/i.test(await rd(8000))) throw new Error('Maling password o port ng Shoutcast');
+      await Tcp.write({ data: b64(te('icy-name: JEIANNE FM\r\nicy-pub: 1\r\nicy-br: ' + br + '\r\ncontent-type: audio/mpeg\r\n\r\n')) });
+    } else {
+      const mount = c.mount.startsWith('/') ? c.mount : '/' + c.mount;
+      const auth = b64(te(c.user + ':' + c.password));
+      await Tcp.write({ data: b64(te('PUT ' + mount + ' HTTP/1.1\r\nHost: ' + c.host + ':' + c.port + '\r\nAuthorization: Basic ' + auth +
+        '\r\nUser-Agent: JeianneFM\r\nContent-Type: audio/mpeg\r\nIce-Name: JEIANNE FM\r\nIce-Public: 1\r\nIce-Bitrate: ' + br + '\r\n\r\n')) });
+      const r = await rd(8000);
+      if (!/^HTTP\/1\.\d (100|200)/.test(r)) throw new Error('Tinanggihan ng Icecast: ' + (r.split('\r\n')[0] || 'walang sagot'));
+    }
+    if (!ws) return;
+    enc = new lamejs.Mp3Encoder(2, ctx.sampleRate, br);
+    proc = ctx.createScriptProcessor(4096, 2, 2);
+    const mute = ctx.createGain(); mute.gain.value = 0;
+    master.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
+    proc.onaudioprocess = (e) => {
+      if (!enc) return;
+      const out = enc.encodeBuffer(toI16(e.inputBuffer.getChannelData(0)), toI16(e.inputBuffer.getChannelData(1)));
+      if (out.length) sendBytes(out);
+    };
+    liveSince = Date.now();
+    $('#liveBtn').textContent = '■ TAPUSIN ANG BROADCAST';
+    $('#liveBtn').classList.add('live');
+    timer = setInterval(() => setStatus('🔴 LIVE  ' + fmt((Date.now() - liveSince) / 1000), true), 1000);
+    setStatus('🔴 LIVE', true);
+    if (navigator.wakeLock) navigator.wakeLock.request('screen').then((w) => (wake = w)).catch(() => {});
+  } catch (e) { stopLive(e.message || String(e)); }
+}
+
+function getCfg() {
+  return {
+    mode: $('#o_mode').value, host: $('#o_host').value.trim(), port: $('#o_port').value.trim(),
+    mount: $('#o_mount').value.trim(), user: $('#o_user').value.trim(),
+    password: $('#o_pass').value, bitrate: $('#o_br').value,
+  };
+}
+function getAll() {
+  return getCfg();
+}
+function saveCfg() {
+  try { localStorage.setItem('jfm_cfg', JSON.stringify(getAll())); } catch {}
+  $('#o_mountbox').style.display = $('#o_mode').value === 'icecast' ? 'block' : 'none';
+}
+try {
+  const c = JSON.parse(localStorage.getItem('jfm_cfg') || 'null');
+  if (c) {
+    $('#o_mode').value = c.mode || 'icecast'; $('#o_host').value = c.host || ''; $('#o_port').value = c.port || '';
+    $('#o_mount').value = c.mount || ''; $('#o_user').value = c.user || 'source';
+    $('#o_pass').value = c.password || ''; $('#o_br').value = c.bitrate || '128k';
+  }
+} catch {}
+['o_mode', 'o_host', 'o_port', 'o_mount', 'o_user', 'o_pass', 'o_br'].forEach((id) => {
+  $('#' + id).addEventListener('input', saveCfg);
+  $('#' + id).addEventListener('change', saveCfg);
+});
+saveCfg();
+$('#liveBtn').onclick = goLive;
+window.addEventListener('beforeunload', (e) => { if (ws) { e.preventDefault(); e.returnValue = ''; } });
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && ws && navigator.wakeLock && !wake)
+    navigator.wakeLock.request('screen').then((w) => (wake = w)).catch(() => {});
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "jeianne-fm-mixer",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": { "build:www": "mkdir -p www && cp index.html www/ && cp node_modules/lamejs/lame.min.js www/" },
+  "dependencies": { "@capacitor/android": "^6.1.0", "@capacitor/core": "^6.1.0", "lamejs": "^1.2.1" },
+  "devDependencies": { "@capacitor/cli": "^6.1.0" }
+}
