@@ -31,6 +31,10 @@ button.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 
 ul{list-style:none;margin:8px 0 0;padding:0;max-height:140px;overflow:auto;font-size:12px}
 li{padding:8px;border-radius:9px;margin-bottom:3px;background:#0f0f19;color:#c4c4dc;word-break:break-word}
 li.cur{background:#26264a;color:#fff;border-left:3px solid var(--c)}
+li{display:flex;align-items:center;gap:6px}
+li span{flex:1;min-width:0}
+li .x{flex:none;min-width:34px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#2a1b24;color:#ff7b8f;font-size:13px}
+li .x:active{background:#4a2232}
 label{display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);margin:12px 0 6px}
 label b{color:var(--txt)}
 .chk{display:flex;align-items:center;gap:10px;font-size:13px;text-transform:none;letter-spacing:0;color:var(--txt);margin-top:14px}
@@ -130,7 +134,16 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
     <button id="micBtn">🎤 MIC: OFF</button>
     <button id="monBtn">🔈 Pakinggan: ON</button>
   </div>
-  <label class="chk"><input type="checkbox" id="duck" checked> Hinaan ang kanta kapag may mic</label>
+  <label>Echo ng Mic: <b id="echov">25%</b></label>
+  <input type="range" min="0" max="100" value="25" id="echoAmt">
+  <select id="echoTime" style="margin-top:6px">
+    <option value="0.15">Echo: Mabilis (0.15s)</option>
+    <option value="0.3" selected>Echo: Normal (0.3s)</option>
+    <option value="0.45">Echo: Mahaba (0.45s)</option>
+  </select>
+  <label class="chk"><input type="checkbox" id="duck" checked> Auto-duck: hinaan ang kanta kapag nagsasalita</label>
+  <label>Lakas ng kanta habang nagsasalita: <b id="duckv">25%</b></label>
+  <input type="range" min="0" max="100" value="25" id="duckLvl">
   <div class="meter"><i id="meter"></i></div>
 </div>
 
@@ -192,6 +205,18 @@ limiter.connect(dest);
 duckGain.connect(monitor);          // ang kanta lang ang naririnig sa phone (iwas feedback sa mic)
 monitor.connect(ctx.destination);
 
+// ECHO ng mic: delay na may feedback at lowpass para natural ang tunog
+const echoDelay = ctx.createDelay(1.0); echoDelay.delayTime.value = 0.3;
+const echoTone = ctx.createBiquadFilter(); echoTone.type = 'lowpass'; echoTone.frequency.value = 3500;
+const echoFb = ctx.createGain(); echoFb.gain.value = 0.4;
+const echoWet = ctx.createGain(); echoWet.gain.value = 0.25;
+micGain.connect(echoDelay); echoDelay.connect(echoTone);
+echoTone.connect(echoFb); echoFb.connect(echoDelay);
+echoTone.connect(echoWet); echoWet.connect(master);
+// pang-detect ng boses para sa auto-duck
+const micAn = ctx.createAnalyser(); micAn.fftSize = 1024;
+micGain.connect(micAn);
+
 const decks = [0, 1].map((i) => {
   const audio = new Audio();
   audio.preload = 'auto';
@@ -199,7 +224,7 @@ const decks = [0, 1].map((i) => {
   const fader = ctx.createGain();
   const cross = ctx.createGain();
   src.connect(fader); fader.connect(cross); cross.connect(tracksGain);
-  const d = { i, audio, fader, cross, list: [], idx: -1, muted: false, locked: false, vol: 1 };
+  const d = { i, audio, fader, cross, list: [], idx: -1, muted: false, locked: false, vol: 1, loads: 0, orphan: false };
   audio.addEventListener('ended', () => onEnded(d));
   audio.addEventListener('timeupdate', () => {
     $('#time' + i).textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration || 0);
@@ -225,20 +250,51 @@ function renderList(d) {
   ul.innerHTML = '';
   d.list.forEach((f, k) => {
     const li = document.createElement('li');
-    li.textContent = (k + 1) + '. ' + f.name.replace(/\.[^.]+$/, '');
-    if (k === d.idx) li.className = 'cur';
+    const t = document.createElement('span');
+    t.textContent = (k + 1) + '. ' + f.name.replace(/\.[^.]+$/, '');
+    const x = document.createElement('b');
+    x.className = 'x'; x.textContent = '✕';
+    x.onclick = (e) => { e.stopPropagation(); removeTrack(d, k); };
+    li.append(t, x);
+    if (k === d.idx && !d.orphan) li.className = 'cur';
     li.onclick = () => { load(d, k); play(d); };
     ul.appendChild(li);
   });
 }
 function load(d, k) {
   if (k < 0 || k >= d.list.length) return;
-  d.idx = k; d.finished = false;
+  d.idx = k; d.finished = false; d.loads++; d.orphan = false;
   if (d.url) URL.revokeObjectURL(d.url);
   d.url = URL.createObjectURL(d.list[k]);
   d.audio.src = d.url;
   $('#now' + d.i).textContent = d.list[k].name.replace(/\.[^.]+$/, '');
   renderList(d);
+}
+function clearDeck(d) {
+  d.audio.pause(); d.audio.removeAttribute('src'); d.audio.load();
+  if (d.url) { URL.revokeObjectURL(d.url); d.url = null; }
+  d.idx = -1; d.orphan = false;
+  $('#now' + d.i).textContent = 'Walang kanta';
+  $('#time' + d.i).textContent = '0:00 / 0:00';
+  updatePlayBtn(d);
+}
+function removeTrack(d, k) {            // alisin sa listahan (hindi binubura ang file sa phone)
+  if (k < 0 || k >= d.list.length) return;
+  const playingNow = k === d.idx && !d.orphan && !d.audio.paused;
+  if (playingNow && !confirm('Naka-play pa ang kantang ito. Aalisin lang sa listahan at matatapos pa rin ang tugtog.')) return;
+  d.list.splice(k, 1);
+  if (k < d.idx || (d.orphan && k === d.idx)) d.idx--;
+  else if (k === d.idx && !d.orphan) {
+    if (playingNow) { d.idx = k - 1; d.orphan = true; }          // tuloy ang tugtog; ang susunod ay ang kasunod sa listahan
+    else if (k < d.list.length) { load(d, k); return; }          // ihanda ang kasunod na kanta
+    else clearDeck(d);
+  }
+  renderList(d);
+}
+function dropFinished(d) {              // laging alisin sa listahan ang natapos na kanta
+  if (d.orphan || d.idx < 0 || d.idx >= d.list.length) return;
+  d.list.splice(d.idx, 1); d.idx--;
+  if (!d.list.length) clearDeck(d); else renderList(d);
 }
 function play(d) {
   ctx.resume();
@@ -301,13 +357,14 @@ function cueNext(d) {            // ihanda (hindi i-play) ang susunod na kanta n
   return false;
 }
 function onEnded(d) {
+  dropFinished(d);
   const o = decks[1 - d.i];
   if (autoMix && !o.audio.paused) { cueNext(d); updatePlayBtn(d); }
   else next(d);
 }
 function mixTo(from, to) {
   fading = true;
-  const startIdx = from.idx;
+  const startLoads = from.loads;
   if (to.idx < 0 && to.list.length) load(to, 0);
   to.audio.currentTime = 0;
   to.audio.play().catch(() => {});
@@ -323,7 +380,7 @@ function mixTo(from, to) {
       clearInterval(tm);
       fading = false;
       from.audio.pause();
-      if (from.idx === startIdx) cueNext(from);   // iwas double-advance kung tumawag na ang onEnded
+      if (from.loads === startLoads) { dropFinished(from); cueNext(from); }   // iwas double-advance kung tumawag na ang onEnded
       updatePlayBtn(from);
     }
   }, 100);
@@ -355,7 +412,6 @@ async function toggleMic() {
     micStream.getTracks().forEach((t) => t.stop());
     micSrc.disconnect(); micStream = null; micSrc = null;
     btn.textContent = '🎤 MIC: OFF'; btn.classList.remove('on');
-    duckGain.gain.setTargetAtTime(1, ctx.currentTime, 0.1);
     return;
   }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -384,12 +440,31 @@ async function toggleMic() {
   micSrc = ctx.createMediaStreamSource(micStream);
   micSrc.connect(micGain);
   btn.textContent = '🎤 MIC: ON'; btn.classList.add('on');
-  if ($('#duck').checked) duckGain.gain.setTargetAtTime(0.3, ctx.currentTime, 0.1);
 }
 $('#micBtn').onclick = toggleMic;
-$('#duck').onchange = () => {
-  if (micStream) duckGain.gain.setTargetAtTime($('#duck').checked ? 0.3 : 1, ctx.currentTime, 0.1);
-};
+
+// ECHO controls
+$('#echoAmt').oninput = (e) => { const v = e.target.value / 100; echoWet.gain.value = v; $('#echov').textContent = e.target.value + '%'; };
+$('#echoTime').onchange = (e) => echoDelay.delayTime.setTargetAtTime(parseFloat(e.target.value), ctx.currentTime, 0.05);
+
+// AUTO-DUCK: bumababa ang kanta kapag may boses sa mic, bumabalik kapag tahimik na
+let duckLevel = 0.25, voiceUntil = 0, lastWant = 1;
+$('#duckLvl').oninput = (e) => { duckLevel = e.target.value / 100; $('#duckv').textContent = e.target.value + '%'; };
+const micBuf = new Float32Array(micAn.fftSize);
+setInterval(() => {
+  let want = 1;
+  if (micStream && $('#duck').checked) {
+    micAn.getFloatTimeDomainData(micBuf);
+    let sum = 0; for (let i = 0; i < micBuf.length; i++) sum += micBuf[i] * micBuf[i];
+    const rms = Math.sqrt(sum / micBuf.length), now = performance.now();
+    if (rms > (now < voiceUntil ? 0.008 : 0.02)) voiceUntil = now + 900;   // hysteresis + 0.9s hold para hindi putol-putol
+    if (now < voiceUntil) want = duckLevel;
+  }
+  if (want !== lastWant) {
+    duckGain.gain.setTargetAtTime(want, ctx.currentTime, want < lastWant ? 0.05 : 0.45);   // mabilis bumaba, dahan-dahang bumalik
+    lastWant = want;
+  }
+}, 50);
 let mon = true;
 $('#monBtn').onclick = () => {
   mon = !mon;
