@@ -79,6 +79,8 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
   button.big{height:54px;font-size:16px}
   .hint{font-size:10.5px}
 }
+#toast{position:fixed;left:12px;right:12px;bottom:calc(120px + env(safe-area-inset-bottom));max-width:616px;margin:0 auto;background:#1b1b2c;border:1px solid var(--acc);color:#fff;padding:12px 14px;border-radius:12px;font-size:13px;line-height:1.4;z-index:50;opacity:0;pointer-events:none;transition:opacity .2s;box-shadow:0 6px 24px #000c}
+#toast.show{opacity:1}
 </style>
 </head>
 <body>
@@ -159,6 +161,13 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
   <input type="range" min="0" max="150" value="100" id="tracksGain">
   <label>Microphone Gain: <b id="mgdb">0.0 dB</b></label>
   <input type="range" min="0" max="200" value="100" id="micGain">
+  <label for="nrLvl">Noise Reduction ng Mic</label>
+  <select id="nrLvl">
+    <option value="0">Off</option>
+    <option value="1">Low (banayad)</option>
+    <option value="2" selected>Medium</option>
+    <option value="3">High (matindi)</option>
+  </select>
   <div class="row" style="margin-top:8px">
     <button id="micBtn">🎤 MIC: OFF</button>
     <button id="monBtn">🔈 Pakinggan: ON</button>
@@ -228,6 +237,12 @@ micGain.connect(micMon); echoWet.connect(micMon); micMon.connect(ctx.destination
 // pang-detect ng boses para sa auto-duck
 const micAn = ctx.createAnalyser(); micAn.fftSize = 1024;
 micGain.connect(micAn);
+// NOISE REDUCTION: high-pass (tanggal ang ugong/rumble) + noise gate (hinihinaan ang ingay kapag hindi nagsasalita)
+const micIn = ctx.createGain();
+const micHP = ctx.createBiquadFilter(); micHP.type = 'highpass'; micHP.frequency.value = 90; micHP.Q.value = 0.7;
+const gate = ctx.createGain();
+const gateAn = ctx.createAnalyser(); gateAn.fftSize = 1024;
+micIn.connect(micHP); micHP.connect(gate); micHP.connect(gateAn); gate.connect(micGain);
 
 const decks = [0, 1].map((i) => {
   const audio = new Audio();
@@ -451,7 +466,7 @@ async function toggleMic() {
     return;
   }
   micSrc = ctx.createMediaStreamSource(micStream);
-  micSrc.connect(micGain);
+  micSrc.connect(micIn);
   btn.textContent = '🎤 MIC: ON'; btn.classList.add('on');
   micMonLabel();
   setTimeout(btApply, 700);
@@ -461,6 +476,31 @@ $('#micBtn').onclick = toggleMic;
 // ECHO controls
 $('#echoAmt').oninput = (e) => { const v = e.target.value / 100; echoWet.gain.value = v; $('#echov').textContent = e.target.value + '%'; };
 $('#echoTime').onchange = (e) => echoDelay.delayTime.setTargetAtTime(parseFloat(e.target.value), ctx.currentTime, 0.05);
+
+// NOISE GATE controls
+const NR = { 0: null, 1: { thr: 0.008, floor: 0.25 }, 2: { thr: 0.015, floor: 0.1 }, 3: { thr: 0.03, floor: 0.03 } };
+let nr = NR[2], gateOpen = true, gateHold = 0;
+function setNR(v) {
+  nr = NR[v] || null;
+  micHP.frequency.value = nr ? 90 : 10;
+  if (!nr) { gate.gain.setTargetAtTime(1, ctx.currentTime, 0.02); gateOpen = true; }
+}
+try { const sv = localStorage.getItem('jfm_nr'); if (sv !== null && NR[sv] !== undefined) $('#nrLvl').value = sv; } catch {}
+setNR($('#nrLvl').value);
+$('#nrLvl').onchange = (e) => { setNR(e.target.value); try { localStorage.setItem('jfm_nr', e.target.value); } catch {} };
+const gBuf = new Float32Array(gateAn.fftSize);
+setInterval(() => {
+  if (!nr) return;
+  gateAn.getFloatTimeDomainData(gBuf);
+  let sum = 0; for (let i = 0; i < gBuf.length; i++) sum += gBuf[i] * gBuf[i];
+  const rms = Math.sqrt(sum / gBuf.length), now = performance.now();
+  if (rms > (gateOpen ? nr.thr * 0.6 : nr.thr)) gateHold = now + 350;   // hysteresis + hold para hindi putol-putol ang salita
+  const open = now < gateHold;
+  if (open !== gateOpen) {
+    gate.gain.setTargetAtTime(open ? 1 : nr.floor, ctx.currentTime, open ? 0.008 : 0.12);
+    gateOpen = open;
+  }
+}, 20);
 
 // AUTO-DUCK: bumababa ang kanta kapag may boses sa mic, bumabalik kapag tahimik na
 let duckLevel = 0.25, voiceUntil = 0, lastWant = 1;
@@ -505,7 +545,7 @@ async function reopenMic() {              // habang nagmo-monitor, patay ang ech
   micStream = null; micSrc = null;
   try {
     micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !micMonOn, noiseSuppression: !micMonOn, autoGainControl: false } });
-    micSrc = ctx.createMediaStreamSource(micStream); micSrc.connect(micGain);
+    micSrc = ctx.createMediaStreamSource(micStream); micSrc.connect(micIn);
     setTimeout(btApply, 700);
   } catch (e) {
     $('#micBtn').textContent = '🎤 MIC: OFF'; $('#micBtn').classList.remove('on');
@@ -525,25 +565,39 @@ $('#micMonBtn').onclick = async () => {
 // BLUETOOTH (native plugin na AudioRoute sa APK)
 const AudioRoute = window.Capacitor && Capacitor.registerPlugin ? Capacitor.registerPlugin('AudioRoute') : null;
 let btOn = false;
-const btMsg = (t) => { $('#btStatus').textContent = t; };
+function toast(t) {
+  let el = $('#toast');
+  if (!el) { el = document.createElement('div'); el.id = 'toast'; document.body.appendChild(el); }
+  el.textContent = t; el.className = 'show';
+  clearTimeout(toast.t); toast.t = setTimeout(() => { el.className = ''; }, 5000);
+}
+const btMsg = (t) => { $('#btStatus').textContent = t; toast(t); };
+const NOPLUGIN = 'Wala pa ang Bluetooth plugin sa APK mo. I-rebuild ang APK sa GitHub gamit ang AudioRoutePlugin.java, tapos i-install ulit.';
+const btErr = (e) => {
+  const m = String((e && (e.message || e.code)) || e);
+  return /unimplemented|not implemented|not available/i.test(m) ? NOPLUGIN : 'Bluetooth: ' + m;
+};
+const pluginReady = () => !!AudioRoute && (!Capacitor.isPluginAvailable || Capacitor.isPluginAvailable('AudioRoute'));
 const btLabel = () => { $('#btBtn').textContent = '🎧 Bluetooth: ' + (btOn ? 'ON' : 'OFF'); $('#btBtn').classList.toggle('on', btOn); };
+if (!AudioRoute) $('#btStatus').textContent = 'Gumagana lang ang Bluetooth sa APK app.';
+else if (!pluginReady()) $('#btStatus').textContent = '⚠ ' + NOPLUGIN;
 async function btApply() {              // ilipat ang tunog sa Bluetooth habang bukas ang mic; ibalik sa normal kapag sarado
-  if (!btOn || !AudioRoute) return;
+  if (!btOn || !pluginReady()) return;
   try { if (micStream) await AudioRoute.routeBluetooth(); else await AudioRoute.routeDefault(); }
-  catch (e) { btMsg('Bluetooth: ' + (e.message || e)); }
+  catch (e) { btMsg(btErr(e)); }
 }
 $('#btSet').onclick = async () => {
-  if (!AudioRoute) { btMsg('Gumagana lang ito sa APK app na may Bluetooth plugin.'); return; }
+  if (!pluginReady()) { btMsg(NOPLUGIN + ' Pansamantala: i-swipe pababa ang notification bar at pindutin nang matagal ang Bluetooth.'); return; }
   try { await AudioRoute.openSettings(); }
-  catch (e) { btMsg('Hindi mabuksan. Buksan mo manual: Settings → Bluetooth. (' + (e.message || e) + ')'); }
+  catch (e) { btMsg(btErr(e) + ' Buksan mo manual: Settings → Bluetooth.'); }
 };
 $('#btBtn').onclick = async () => {
-  if (!AudioRoute) { btMsg('Gumagana lang ito sa APK app na may Bluetooth plugin (kailangan ng bagong APK).'); return; }
   if (btOn) {
     btOn = false; btLabel(); btMsg('Bluetooth OFF');
     try { await AudioRoute.routeDefault(); } catch {}
     return;
   }
+  if (!pluginReady()) { btMsg(NOPLUGIN); return; }
   try {
     const r = await AudioRoute.listDevices();
     const names = [...new Set((r.devices || []).filter((d) => d.bluetooth).map((d) => d.name))];
@@ -551,7 +605,7 @@ $('#btBtn').onclick = async () => {
     btOn = true; btLabel();
     btMsg('Naka-connect: ' + names.join(', ') + (micStream ? '' : ' • Buksan ang 🎤 MIC para marinig ang boses.'));
     await btApply();
-  } catch (e) { btMsg('Hindi gumana ang Bluetooth plugin: ' + (e.message || e)); }
+  } catch (e) { btMsg(btErr(e)); }
 };
 
 // METER
