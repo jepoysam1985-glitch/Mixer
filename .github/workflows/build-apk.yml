@@ -44,7 +44,12 @@ jobs:
             return null;
           })();"""
           assert old in s, 'ERROR: Hindi mahanap ang linya ng Tcp sa index.html'
-          open(p, 'w', encoding='utf-8').write(s.replace(old, new))
+          s = s.replace(old, new)
+          old2 = "const b64 = (u) => { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };"
+          new2 = "const b64 = (u) => { u = new Uint8Array(u.buffer, u.byteOffset, u.byteLength); let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };"
+          assert old2 in s, 'ERROR: Hindi mahanap ang b64 sa index.html'
+          s = s.replace(old2, new2)
+          open(p, 'w', encoding='utf-8').write(s)
           PYEOF
 
       - name: Add Android
