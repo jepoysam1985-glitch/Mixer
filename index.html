@@ -134,6 +134,8 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
     <button id="micBtn">🎤 MIC: OFF</button>
     <button id="monBtn">🔈 Pakinggan: ON</button>
   </div>
+  <div class="row" style="margin-top:8px"><button id="micMonBtn" style="height:48px;font-size:13px">🎧 Marinig ang Mic: OFF</button></div>
+  <div class="hint">Para marinig ang boses at echo mo: ikonekta muna ang Bluetooth/headphone sa Bluetooth settings ng phone, tapos i-ON ito. Huwag gamitin sa speaker ng phone (magfi-feedback). Normal na may kaunting delay sa Bluetooth.</div>
   <label>Echo ng Mic: <b id="echov">25%</b></label>
   <input type="range" min="0" max="100" value="25" id="echoAmt">
   <select id="echoTime" style="margin-top:6px">
@@ -213,6 +215,9 @@ const echoWet = ctx.createGain(); echoWet.gain.value = 0.25;
 micGain.connect(echoDelay); echoDelay.connect(echoTone);
 echoTone.connect(echoFb); echoFb.connect(echoDelay);
 echoTone.connect(echoWet); echoWet.connect(master);
+// PAKINGGAN ANG MIC (boses + echo) sa headphone/Bluetooth; hindi ito kasama sa stream, pang-monitor lang
+const micMon = ctx.createGain(); micMon.gain.value = 0;
+micGain.connect(micMon); echoWet.connect(micMon); micMon.connect(ctx.destination);
 // pang-detect ng boses para sa auto-duck
 const micAn = ctx.createAnalyser(); micAn.fftSize = 1024;
 micGain.connect(micAn);
@@ -440,6 +445,7 @@ async function toggleMic() {
   micSrc = ctx.createMediaStreamSource(micStream);
   micSrc.connect(micGain);
   btn.textContent = '🎤 MIC: ON'; btn.classList.add('on');
+  if (micMonOn) $('#micMonBtn').textContent = '🎧 Marinig ang Mic: ON';
 }
 $('#micBtn').onclick = toggleMic;
 
@@ -470,6 +476,16 @@ $('#monBtn').onclick = () => {
   mon = !mon;
   monitor.gain.value = mon ? 1 : 0;
   $('#monBtn').textContent = '🔈 Pakinggan: ' + (mon ? 'ON' : 'OFF');
+};
+
+let micMonOn = false;
+$('#micMonBtn').onclick = () => {
+  ctx.resume();
+  micMonOn = !micMonOn;
+  micMon.gain.value = micMonOn ? 1 : 0;
+  $('#micMonBtn').textContent = '🎧 Marinig ang Mic: ' + (micMonOn ? 'ON' : 'OFF');
+  $('#micMonBtn').classList.toggle('on', micMonOn);
+  if (micMonOn && !micStream) $('#micMonBtn').textContent = '🎧 Marinig ang Mic: ON (buksan ang 🎤 MIC)';
 };
 
 // METER
