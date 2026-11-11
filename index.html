@@ -84,6 +84,35 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
 <body>
 <h1>🎙 JEIANNE FM MIXER</h1>
 
+<details class="card" id="out">
+  <summary>⚙ Output Settings (Encoder)</summary>
+  <label for="o_mode">Output mode</label>
+  <select id="o_mode">
+    <option value="icecast">Icecast Server</option>
+    <option value="shoutcast">Shoutcast Server (v1)</option>
+  </select>
+  <label for="o_host">Server / Host</label>
+  <input type="text" id="o_host" placeholder="hal. stream-xx.zeno.fm" autocapitalize="off" autocomplete="off" spellcheck="false">
+  <label for="o_port">Port</label>
+  <input type="number" id="o_port" inputmode="numeric" placeholder="hal. 8000">
+  <div id="o_mountbox">
+    <label for="o_mount">Mount point</label>
+    <input type="text" id="o_mount" placeholder="hal. /abc123" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <label for="o_user">Username</label>
+    <input type="text" id="o_user" value="source" autocapitalize="off" autocomplete="off" spellcheck="false">
+  </div>
+  <label for="o_pass">Password</label>
+  <input type="password" id="o_pass" autocomplete="off">
+  <label for="o_br">Bitrate</label>
+  <select id="o_br">
+    <option value="64k">64 kbps</option>
+    <option value="96k">96 kbps</option>
+    <option value="128k" selected>128 kbps</option>
+    <option value="192k">192 kbps</option>
+  </select>
+  <div class="hint">Naka-save lang sa phone mong ito at ginagamit kapag nag-Go Live (diretso sa server, walang relay). Para sa Shoutcast, ilagay ang source port at password na bigay ng Zeno.</div>
+</details>
+
 <div class="decks">
   <div class="card deck" id="deck0">
     <h2>DECK 1</h2>
@@ -134,8 +163,13 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
     <button id="micBtn">🎤 MIC: OFF</button>
     <button id="monBtn">🔈 Pakinggan: ON</button>
   </div>
+  <div class="row" style="margin-top:8px">
+    <button id="btBtn" style="height:48px;font-size:13px">🎧 Bluetooth: OFF</button>
+    <button id="btSet" style="height:48px;font-size:13px">⚙ Bluetooth settings</button>
+  </div>
+  <div class="hint" id="btStatus">I-pair muna ang headphone sa ⚙ Bluetooth settings, tapos i-ON ang 🎧 Bluetooth.</div>
   <div class="row" style="margin-top:8px"><button id="micMonBtn" style="height:48px;font-size:13px">🎧 Marinig ang Mic: OFF</button></div>
-  <div class="hint">Para marinig ang boses at echo mo: ikonekta muna ang Bluetooth/headphone sa Bluetooth settings ng phone, tapos i-ON ito. Huwag gamitin sa speaker ng phone (magfi-feedback). Normal na may kaunting delay sa Bluetooth.</div>
+  <div class="hint">Para marinig ang boses at echo mo: ikonekta muna ang Bluetooth/headphone sa Bluetooth settings ng phone, tapos i-ON ito. May maririnig kang \"pip\" kapag nag-ON; kapag narinig mo iyon, gumagana ang Bluetooth. Huwag gamitin sa speaker ng phone (magfi-feedback).</div>
   <label>Echo ng Mic: <b id="echov">25%</b></label>
   <input type="range" min="0" max="100" value="25" id="echoAmt">
   <select id="echoTime" style="margin-top:6px">
@@ -149,34 +183,7 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
   <div class="meter"><i id="meter"></i></div>
 </div>
 
-<details class="card" id="out">
-  <summary>⚙ Output Settings (Encoder)</summary>
-  <label for="o_mode">Output mode</label>
-  <select id="o_mode">
-    <option value="icecast">Icecast Server</option>
-    <option value="shoutcast">Shoutcast Server (v1)</option>
-  </select>
-  <label for="o_host">Server / Host</label>
-  <input type="text" id="o_host" placeholder="hal. stream-xx.zeno.fm" autocapitalize="off" autocomplete="off" spellcheck="false">
-  <label for="o_port">Port</label>
-  <input type="number" id="o_port" inputmode="numeric" placeholder="hal. 8000">
-  <div id="o_mountbox">
-    <label for="o_mount">Mount point</label>
-    <input type="text" id="o_mount" placeholder="hal. /abc123" autocapitalize="off" autocomplete="off" spellcheck="false">
-    <label for="o_user">Username</label>
-    <input type="text" id="o_user" value="source" autocapitalize="off" autocomplete="off" spellcheck="false">
-  </div>
-  <label for="o_pass">Password</label>
-  <input type="password" id="o_pass" autocomplete="off">
-  <label for="o_br">Bitrate</label>
-  <select id="o_br">
-    <option value="64k">64 kbps</option>
-    <option value="96k">96 kbps</option>
-    <option value="128k" selected>128 kbps</option>
-    <option value="192k">192 kbps</option>
-  </select>
-  <div class="hint">Naka-save lang sa phone mong ito at ginagamit kapag nag-Go Live (diretso sa server, walang relay). Para sa Shoutcast, ilagay ang source port at password na bigay ng Zeno.</div>
-</details>
+
 
 <div class="card">
   <button class="big" id="liveBtn">🔴 GO LIVE</button>
@@ -417,6 +424,7 @@ async function toggleMic() {
     micStream.getTracks().forEach((t) => t.stop());
     micSrc.disconnect(); micStream = null; micSrc = null;
     btn.textContent = '🎤 MIC: OFF'; btn.classList.remove('on');
+    setTimeout(btApply, 300);
     return;
   }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -426,7 +434,7 @@ async function toggleMic() {
   try {
     try {
       micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
+        audio: { echoCancellation: !micMonOn, noiseSuppression: !micMonOn, autoGainControl: false },
       });
     } catch (e1) {
       if (e1.name === 'NotAllowedError' || e1.name === 'SecurityError' || e1.name === 'NotFoundError') throw e1;
@@ -445,7 +453,8 @@ async function toggleMic() {
   micSrc = ctx.createMediaStreamSource(micStream);
   micSrc.connect(micGain);
   btn.textContent = '🎤 MIC: ON'; btn.classList.add('on');
-  if (micMonOn) $('#micMonBtn').textContent = '🎧 Marinig ang Mic: ON';
+  micMonLabel();
+  setTimeout(btApply, 700);
 }
 $('#micBtn').onclick = toggleMic;
 
@@ -479,13 +488,70 @@ $('#monBtn').onclick = () => {
 };
 
 let micMonOn = false;
-$('#micMonBtn').onclick = () => {
+function micMonLabel() {
+  $('#micMonBtn').textContent = '🎧 Marinig ang Mic: ' + (micMonOn ? (micStream ? 'ON' : 'ON (buksan ang 🎤 MIC)') : 'OFF');
+  $('#micMonBtn').classList.toggle('on', micMonOn);
+}
+function beep() {                         // "pip" na sa headphone lang maririnig: patunay na gumagana ang output (Bluetooth)
+  const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+  o.frequency.value = 880; g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.25, t + 0.02); g.gain.linearRampToValueAtTime(0, t + 0.35);
+  o.connect(g); g.connect(micMon); o.start(t); o.stop(t + 0.4);
+}
+async function reopenMic() {              // habang nagmo-monitor, patay ang echo-cancel/noise-suppress ng phone (kinakain nito ang boses sa loop)
+  if (!micStream) return;
+  micStream.getTracks().forEach((t) => t.stop());
+  try { micSrc.disconnect(); } catch {}
+  micStream = null; micSrc = null;
+  try {
+    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !micMonOn, noiseSuppression: !micMonOn, autoGainControl: false } });
+    micSrc = ctx.createMediaStreamSource(micStream); micSrc.connect(micGain);
+    setTimeout(btApply, 700);
+  } catch (e) {
+    $('#micBtn').textContent = '🎤 MIC: OFF'; $('#micBtn').classList.remove('on');
+    alert('Hindi na mabuksan ulit ang mic: ' + (e.message || e));
+  }
+}
+$('#micMonBtn').onclick = async () => {
   ctx.resume();
   micMonOn = !micMonOn;
   micMon.gain.value = micMonOn ? 1 : 0;
-  $('#micMonBtn').textContent = '🎧 Marinig ang Mic: ' + (micMonOn ? 'ON' : 'OFF');
-  $('#micMonBtn').classList.toggle('on', micMonOn);
-  if (micMonOn && !micStream) $('#micMonBtn').textContent = '🎧 Marinig ang Mic: ON (buksan ang 🎤 MIC)';
+  if (micMonOn) beep();
+  micMonLabel();
+  await reopenMic();
+  micMonLabel();
+};
+
+// BLUETOOTH (native plugin na AudioRoute sa APK)
+const AudioRoute = window.Capacitor && Capacitor.registerPlugin ? Capacitor.registerPlugin('AudioRoute') : null;
+let btOn = false;
+const btMsg = (t) => { $('#btStatus').textContent = t; };
+const btLabel = () => { $('#btBtn').textContent = '🎧 Bluetooth: ' + (btOn ? 'ON' : 'OFF'); $('#btBtn').classList.toggle('on', btOn); };
+async function btApply() {              // ilipat ang tunog sa Bluetooth habang bukas ang mic; ibalik sa normal kapag sarado
+  if (!btOn || !AudioRoute) return;
+  try { if (micStream) await AudioRoute.routeBluetooth(); else await AudioRoute.routeDefault(); }
+  catch (e) { btMsg('Bluetooth: ' + (e.message || e)); }
+}
+$('#btSet').onclick = async () => {
+  if (!AudioRoute) { btMsg('Gumagana lang ito sa APK app na may Bluetooth plugin.'); return; }
+  try { await AudioRoute.openSettings(); }
+  catch (e) { btMsg('Hindi mabuksan. Buksan mo manual: Settings → Bluetooth. (' + (e.message || e) + ')'); }
+};
+$('#btBtn').onclick = async () => {
+  if (!AudioRoute) { btMsg('Gumagana lang ito sa APK app na may Bluetooth plugin (kailangan ng bagong APK).'); return; }
+  if (btOn) {
+    btOn = false; btLabel(); btMsg('Bluetooth OFF');
+    try { await AudioRoute.routeDefault(); } catch {}
+    return;
+  }
+  try {
+    const r = await AudioRoute.listDevices();
+    const names = [...new Set((r.devices || []).filter((d) => d.bluetooth).map((d) => d.name))];
+    if (!names.length) { btMsg('Walang Bluetooth na naka-connect. Pindutin ang ⚙ Bluetooth settings at i-connect ang headphone.'); return; }
+    btOn = true; btLabel();
+    btMsg('Naka-connect: ' + names.join(', ') + (micStream ? '' : ' • Buksan ang 🎤 MIC para marinig ang boses.'));
+    await btApply();
+  } catch (e) { btMsg('Hindi gumana ang Bluetooth plugin: ' + (e.message || e)); }
 };
 
 // METER
