@@ -56,6 +56,7 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #ff335599}50%{box-shadow:0 0 0 12px #ff335500}}
 #status{font-size:13px;text-align:center;margin-top:10px;color:var(--dim);min-height:18px;font-variant-numeric:tabular-nums}
 #status.live{color:#ff6b81;font-weight:800}
+.spec{display:block;width:100%;height:48px;margin:8px 0 2px;background:#0b0b14;border-radius:10px}
 </style>
 </head>
 <body>
@@ -499,6 +500,47 @@ document.addEventListener('visibilitychange', () => {
 (function(){const r=[...document.querySelectorAll('input[type=range]')];
 function f(){r.forEach(e=>{const p=(e.value-e.min)/(e.max-e.min)*100;e.style.setProperty('--v',p+'%');});}
 setInterval(f,100);f();})();
+</script>
+<script>
+// SPECTRUM ng Deck 1 at Deck 2 (kinukuha pagkatapos ng volume/crossfader, kaya ito ang talagang naririnig sa live)
+(function () {
+  const N = 28, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const specs = decks.map((d) => {
+    const an = ctx.createAnalyser();
+    an.fftSize = 256; an.smoothingTimeConstant = 0.75;
+    d.cross.connect(an);
+    const root = document.getElementById('deck' + d.i);
+    const cv = document.createElement('canvas');
+    cv.className = 'spec';
+    root.querySelector('.time').after(cv);
+    return { an, cv, g: cv.getContext('2d'), data: new Uint8Array(an.frequencyBinCount), peaks: new Array(N).fill(0),
+             color: getComputedStyle(root).getPropertyValue('--c').trim() || '#22d3ee' };
+  });
+  function draw() {
+    requestAnimationFrame(draw);
+    if (document.hidden) return;
+    for (const sp of specs) {
+      const w = sp.cv.clientWidth, h = sp.cv.clientHeight;
+      if (sp.cv.width !== Math.round(w * dpr)) { sp.cv.width = Math.round(w * dpr); sp.cv.height = Math.round(h * dpr); }
+      const g = sp.g; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+      sp.an.getByteFrequencyData(sp.data);
+      const bw = w / N, gap = Math.max(1.5, bw * 0.22);
+      const grad = g.createLinearGradient(0, h, 0, 0);
+      grad.addColorStop(0, sp.color + '55'); grad.addColorStop(1, sp.color);
+      for (let i = 0; i < N; i++) {
+        const lo = Math.floor(Math.pow(i / N, 1.7) * 100) + 1;
+        const hi = Math.max(lo + 1, Math.floor(Math.pow((i + 1) / N, 1.7) * 100) + 1);
+        let sum = 0; for (let k = lo; k < hi; k++) sum += sp.data[k];
+        const v = Math.min(1, (sum / (hi - lo) / 255) * 1.25);
+        const bh = Math.max(2, v * (h - 4));
+        g.fillStyle = grad; g.fillRect(i * bw + gap / 2, h - bh, bw - gap, bh);
+        sp.peaks[i] = Math.max(v, sp.peaks[i] - 0.012);
+        g.fillStyle = '#fff'; g.fillRect(i * bw + gap / 2, h - sp.peaks[i] * (h - 4) - 3, bw - gap, 2);
+      }
+    }
+  }
+  draw();
+})();
 </script>
 </body>
 </html>
