@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0a0a12">
 <title>JEIANNE FM Mixer</title>
-<script src="lame.min.js"></script>
+<script src="lame.min.js" defer></script>
 <style>
 :root{--bg:#0a0a12;--panel:#13131f;--panel2:#1b1b2c;--line:#272742;--txt:#f1f1f8;--dim:#c9c9e2;--c1:#22d3ee;--c2:#f472b6;--acc:#8b5cf6;--live:#ff3355;--ok:#22c55e}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -22,7 +22,7 @@ h1{font-size:15px;letter-spacing:3px;text-align:center;margin:6px 0 14px;font-we
 .sheethead b{font-size:14px}
 #closeSettings,#closeMix{flex:none;width:42px;height:42px;border-radius:50%;font-size:18px}
 .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px;box-shadow:0 6px 24px #0008}
-.decks{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:5px;margin-bottom:12px}
+.decks{display:grid;grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);gap:5px;margin-bottom:12px}
 .decks .card{margin:0}
 #deck0{--c:var(--c1)}#deck1{--c:var(--c2)}
 .deck{border-top:3px solid var(--c)}
@@ -198,13 +198,18 @@ input[type=range]::-webkit-slider-thumb{width:22px;height:34px}   /* mas madalin
   .card.vmeter{padding:6px 0}
 }
 @media (max-width:340px){#duckBtn{font-size:8.5px}}
+button{touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#toast{position:fixed;left:12px;right:12px;bottom:max(14px,env(safe-area-inset-bottom));z-index:200;max-width:520px;margin:0 auto;padding:10px 14px;border-radius:8px;background:#1c1d22;border:1px solid #ffb347;color:#ffb347;font-size:13px;line-height:1.4;box-shadow:0 8px 24px #000c;pointer-events:none;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s}#toast.show{opacity:1;transform:none}
+.bpmtop{display:flex;align-items:center;gap:6px;margin-top:8px}.bpmv{flex:1;min-width:0;font:11px ui-monospace,monospace;color:var(--c);text-shadow:0 0 5px var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.syncbtn{flex:none;width:54px;height:30px;font-size:10.5px}.bpmrow input{margin:2px 0 0}#bmBtn,#fxToggle{height:46px;font-size:11px;padding:0 4px}#xfCard .row button{white-space:normal;line-height:1.15;min-width:0}
+.vmpair{display:flex;gap:4px;flex:1;justify-content:center}.vmcol{display:flex;flex-direction:column;align-items:center;gap:6px}.vmcol .vm{width:14px}.vmcol .vl{font-size:12px}
 </style>
 </head>
 <body>
+<div id="toast" role="status" aria-live="polite"></div>
 <div class="topbar"><button id="mixBtn" aria-label="Open audio settings">🎚</button><h1>🎙 JEIANNE FM MIXER</h1><button id="gearBtn" aria-label="Open output settings">⚙</button></div>
 
 <div class="modal" id="out" hidden>
-<div class="card sheet" role="dialog" aria-label="Output Settings">
+<div class="card sheet" role="dialog" aria-modal="true" aria-label="Output Settings">
   <div class="sheethead"><b>Output Settings (Encoder)</b><button id="closeSettings" aria-label="Close settings">✕</button></div>
   <label for="o_mode">Output mode</label>
   <select id="o_mode">
@@ -235,7 +240,7 @@ input[type=range]::-webkit-slider-thumb{width:22px;height:34px}   /* mas madalin
 </div>
 
 <div class="modal" id="mixSettings" hidden>
-<div class="card sheet" role="dialog" aria-label="Audio Settings">
+<div class="card sheet" role="dialog" aria-modal="true" aria-label="Audio Settings">
   <div class="sheethead"><b>Audio Settings</b><button id="closeMix" aria-label="Close audio settings">✕</button></div>
   <label style="margin-top:14px">Tracks Gain: <b id="tgdb">0.0 dB</b></label>
   <input type="range" min="0" max="150" value="100" id="tracksGain" aria-label="Tracks Gain">
@@ -284,9 +289,11 @@ input[type=range]::-webkit-slider-thumb{width:22px;height:34px}   /* mas madalin
     <ul id="list0"></ul>
     <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac" multiple hidden id="file0">
   </div>
-  <div class="card vmeter" aria-label="Output level">
-    <span class="vl">Level</span>
-    <div class="vm"><i id="meter"></i></div>
+  <div class="card vmeter" aria-label="Music and microphone level">
+    <div class="vmpair">
+      <div class="vmcol"><span class="vl" aria-label="Music">♪</span><div class="vm"><i id="meterMusic"></i></div></div>
+      <div class="vmcol"><span class="vl" aria-label="Microphone">🎤</span><div class="vm"><i id="meterMic"></i></div></div>
+    </div>
   </div>
   <div class="card deck" id="deck1">
     <h2>DECK 2</h2>
@@ -315,6 +322,8 @@ input[type=range]::-webkit-slider-thumb{width:22px;height:34px}   /* mas madalin
 <div class="card" id="xfCard">
   <div class="row" style="margin-top:0">
     <button id="autoBtn">🔀 AUTO-MIX: OFF</button>
+    <button id="bmBtn">🎯 BEAT-MATCH: OFF</button>
+    <button id="fxToggle" aria-expanded="false" aria-controls="fxCard">🔔 EFFECTS</button>
   </div>
 </div>
 
@@ -338,7 +347,7 @@ OFF</button>
   <div id="status">Not live</div>
 </div>
 
-<div class="card" id="fxCard">
+<div class="card" id="fxCard" hidden>
   <label style="margin-top:0">🔔 Effects (12 slots)</label>
   <div class="fxgrid" id="fxGrid"></div>
   <div class="row">
@@ -354,6 +363,9 @@ OFF</button>
 
 <script>
 const $ = (s) => document.querySelector(s);
+// TOAST: non-blocking na kapalit ng toast() (hinaharang ng alert ang audio thread habang live)
+let toastT;
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), Math.min(9000, 3000 + msg.length * 45)); }
 const ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 44100 });
 const master = ctx.createGain();
 const tracksGain = ctx.createGain();
@@ -420,10 +432,10 @@ function fmt(s) {
 
 function applyCross() {
   const v = $('#cross').value / 100;
-  decks[0].cross.gain.value = Math.cos(v * Math.PI / 2);
-  decks[1].cross.gain.value = Math.cos((1 - v) * Math.PI / 2);
+  decks[0].cross.gain.setTargetAtTime(Math.cos(v * Math.PI / 2), ctx.currentTime, 0.03);
+  decks[1].cross.gain.setTargetAtTime(Math.cos((1 - v) * Math.PI / 2), ctx.currentTime, 0.03);
 }
-function applyFader(d) { d.fader.gain.value = d.muted ? 0 : d.vol; }
+function applyFader(d) { d.fader.gain.setTargetAtTime(d.muted ? 0 : d.vol, ctx.currentTime, 0.02); }
 
 // MARQUEE: gumagalaw ang pamagat kapag mas mahaba kaysa sa kahon
 function mqNode(text) {
@@ -453,7 +465,7 @@ function renderList(d) {
     const li = document.createElement('li');
     const t = mqNode((k + 1) + '. ' + f.name.replace(/\.[^.]+$/, ''));
     const x = document.createElement('b');
-    x.className = 'x'; x.textContent = '✕';
+    x.className = 'x'; x.textContent = '✕'; x.setAttribute('role', 'button'); x.tabIndex = 0; x.setAttribute('aria-label', 'Remove track');
     x.onclick = (e) => { e.stopPropagation(); removeTrack(d, k); };
     li.append(t, x);
     if (k === d.idx && !d.orphan) li.className = 'cur';
@@ -484,7 +496,7 @@ function clearDeck(d) {
 function removeTrack(d, k) {            // alisin sa listahan (hindi binubura ang file sa phone)
   if (k < 0 || k >= d.list.length) return;
   const playingNow = k === d.idx && !d.orphan && !d.audio.paused;
-  if (playingNow && !confirm('This track is still playing. It will only be removed from the list and will finish playing.')) return;
+  if (playingNow) toast('Removed from the list. It will finish playing.');
   d.list.splice(k, 1);
   if (k < d.idx || (d.orphan && k === d.idx)) d.idx--;
   else if (k === d.idx && !d.orphan) {
@@ -519,7 +531,7 @@ function next(d) {
 const AUDIO_RE = /\.(mp3|m4a|aac|wav|ogg|opus|flac)$/i;
 const isAudio = (f) => (f.type || '').startsWith('audio/') || AUDIO_RE.test(f.name);
 function addFiles(d, files, emptyMsg) {
-  if (!files.length) { alert(emptyMsg); return; }
+  if (!files.length) { toast(emptyMsg); return; }
   d.list.push(...files);
   if (d.idx < 0) load(d, 0);
   renderList(d);
@@ -578,6 +590,7 @@ function mixTo(from, to) {
   const startLoads = from.loads;
   if (to.idx < 0 && to.list.length) load(to, 0);
   to.audio.currentTime = 0;
+  if (beatMatch) syncDeck(to, from, true);
   to.audio.play().catch(() => {});
   updatePlayBtn(to);
   const slider = $('#cross');
@@ -591,6 +604,7 @@ function mixTo(from, to) {
       clearInterval(tm);
       fading = false;
       from.audio.pause();
+      if (beatMatch && to.tempo) glideTempo(to);
       if (from.loads === startLoads) { dropFinished(from); cueNext(from); }   // iwas double-advance kung tumawag na ang onEnded
       updatePlayBtn(from);
     }
@@ -627,7 +641,7 @@ async function toggleMic() {
     return;
   }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    alert('The mic does not work here. Open the mixer through an https:// link (not a file) in Chrome or Safari itself, not inside Facebook, Messenger or another in-app browser.');
+    toast('The mic does not work here. Open the mixer through an https:// link (not a file) in Chrome or Safari itself, not inside Facebook, Messenger or another in-app browser.');
     return;
   }
   try {
@@ -646,7 +660,7 @@ async function toggleMic() {
       NotFoundError: 'No microphone was found on this device.',
       NotReadableError: 'Another app is using the mic. Close other apps first (calls, recorders, etc.).',
     }[err.name] || err.message;
-    alert('Could not open the mic: ' + why);
+    toast('Could not open the mic: ' + why);
     return;
   }
   micSrc = ctx.createMediaStreamSource(micStream);
@@ -736,7 +750,7 @@ async function reopenMic() {              // habang nagmo-monitor, patay ang ech
     micSrc = ctx.createMediaStreamSource(micStream); micSrc.connect(micIn);
   } catch (e) {
     $('#micBtn').textContent = '🎤\nMIC\nOFF'; $('#micBtn').classList.remove('on');
-    alert('Could not reopen the mic: ' + (e.message || e));
+    toast('Could not reopen the mic: ' + (e.message || e));
   }
 }
 $('#micMonBtn').onclick = async () => {
@@ -749,7 +763,7 @@ $('#micMonBtn').onclick = async () => {
   micMonLabel();
 };
 
-// EFFECTS: 8 slot ng jingle/sound effect (kasama sa stream; naka-save sa IndexedDB ng phone)
+// EFFECTS: 12 slot ng jingle/sound effect (kasama sa stream; naka-save sa IndexedDB ng phone)
 const FX_N = 12;
 const fxGain = ctx.createGain(); fxGain.gain.value = 1;
 fxGain.connect(master); fxGain.connect(monitor);
@@ -760,7 +774,13 @@ const fxDB = () => new Promise((res, rej) => {
   r.onupgradeneeded = () => r.result.createObjectStore('fx');
   r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
 });
-async function fxSave(i, name, data) { try { (await fxDB()).transaction('fx', 'readwrite').objectStore('fx').put({ name, data }, i); } catch {} }
+async function fxSave(i, name, data) {
+  try {
+    const tx = (await fxDB()).transaction('fx', 'readwrite');
+    tx.objectStore('fx').put({ name, data }, i);
+    tx.onerror = tx.onabort = () => toast('Could not save the effect to the phone (storage full?). It works now but will be gone after restart.');
+  } catch { toast('Could not save the effect to the phone.'); }
+}
 async function fxDel(i) { try { (await fxDB()).transaction('fx', 'readwrite').objectStore('fx').delete(i); } catch {} }
 async function fxLoadAll() {
   try {
@@ -786,14 +806,14 @@ function fxPlay(i) {
   f.src = s; s.start(); fxRender();
 }
 async function fxSet(i, file) {
-  if (file.size > 15 * 1048576) { alert('That file is too large (max 15MB). Choose a short effect.'); return; }
+  if (file.size > 15 * 1048576) { toast('That file is too large (max 15MB). Choose a short effect.'); return; }
   try {
     const data = await file.arrayBuffer();
     const buf = await ctx.decodeAudioData(data.slice(0));
-    if (buf.duration > 90) { alert('That file is too long (' + Math.round(buf.duration) + 's). Effects can be up to 90 seconds.'); return; }
+    if (buf.duration > 30) { toast('That file is too long (' + Math.round(buf.duration) + 's). Effects can be up to 30 seconds.'); return; }
     fxStopSlot(i); fx[i].buf = buf; fx[i].name = file.name.replace(/\.[^.]+$/, '');
     fxSave(i, fx[i].name, data); fxRender();
-  } catch { alert('Could not read that audio file.'); }
+  } catch { toast('Could not read that audio file.'); }
 }
 const FX_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#ec4899', '#14b8a6', '#e5e7eb'];
 function fxRender() {
@@ -840,19 +860,21 @@ $('#fxVol').oninput = (e) => { fxGain.gain.value = e.target.value / 100; $('#fxv
 fxRender(); fxLoadAll();
 
 // METER
-const buf = new Uint8Array(analyser.fftSize);
-(function loop() {
-  analyser.getByteTimeDomainData(buf);
-  let peak = 0;
-  for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
-  $('#meter').style.height = (100 - Math.min(100, (peak / 128) * 100)) + '%';   // tinatakpan ng maitim na bahagi mula sa taas
-  requestAnimationFrame(loop);
-})();
+const meterMusic = $('#meterMusic'), meterMic = $('#meterMic');
+const musicAn = ctx.createAnalyser(); musicAn.fftSize = 512;
+duckGain.connect(musicAn); fxGain.connect(musicAn);          // MUSIC = mga kanta + effects (bago ang mic)
+const mBuf = new Float32Array(512), cBuf = new Float32Array(micAn.fftSize);   // MIC = boses mula sa mic (pagkatapos ng noise gate at gain)
+function peakOf(an, arr, el) {
+  an.getFloatTimeDomainData(arr);
+  let p = 0; for (let i = 0; i < arr.length; i++) { const v = Math.abs(arr[i]); if (v > p) p = v; }
+  el.style.height = (100 - Math.min(100, p * 100)) + '%';      // tinatakpan ng maitim na bahagi mula sa taas
+}
+(function loop() { peakOf(musicAn, mBuf, meterMusic); peakOf(micAn, cBuf, meterMic); requestAnimationFrame(loop); })();
 
 // GO LIVE (APK: MP3 sa loob ng app + diretsong TCP sa Icecast/Shoutcast)
 const Tcp = window.Capacitor && Capacitor.registerPlugin ? Capacitor.registerPlugin('TcpSocket') : null;
 let pending = 0, dropped = 0;
-let ws = null, wake = null, liveSince = 0, timer = null, proc = null, enc = null, q = Promise.resolve();
+let ws = null, wake = null, liveSince = 0, timer = null, proc = null, mut = null, enc = null, q = Promise.resolve();
 const statusEl = $('#status');
 // SETTINGS POPUPS: ⚙ (Output/Encoder) at 🎚 (Audio); nakatago kapag sarado
 function showModal(id, on) {
@@ -886,7 +908,8 @@ function sendBytes(u) {
 }
 function stopLive(msg) {
   const was = ws; ws = null;
-  if (proc) { try { limiter.disconnect(proc); } catch {} proc.onaudioprocess = null; proc = null; }
+  if (proc) { try { limiter.disconnect(proc); } catch {} proc.onaudioprocess = null; try { proc.disconnect(); } catch {} proc = null; }
+  if (mut) { try { mut.disconnect(); } catch {} mut = null; }
   enc = null; clearInterval(timer);
   if (was && Tcp) Tcp.close().catch(() => {});
   if (wake) { wake.release().catch(() => {}); wake = null; }
@@ -928,7 +951,7 @@ async function goLive() {
     if (!ws) return;
     enc = new lamejs.Mp3Encoder(2, ctx.sampleRate, br);
     proc = ctx.createScriptProcessor(4096, 2, 2);
-    const mute = ctx.createGain(); mute.gain.value = 0;
+    const mute = mut = ctx.createGain(); mute.gain.value = 0;
     limiter.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
     proc.onaudioprocess = (e) => {
       if (!enc) return;
@@ -938,7 +961,7 @@ async function goLive() {
     liveSince = Date.now();
     $('#liveBtn').textContent = '■\nEND LIVE';
     $('#liveBtn').classList.add('live');
-    timer = setInterval(() => setStatus('🔴 LIVE  ' + fmt((Date.now() - liveSince) / 1000), true), 1000);
+    timer = setInterval(() => setStatus('🔴 LIVE  ' + fmt((Date.now() - liveSince) / 1000) + (dropped ? '  ⚠' + dropped : ''), true), 1000);
     setStatus('🔴 LIVE', true);
     if (navigator.wakeLock) navigator.wakeLock.request('screen').then((w) => (wake = w)).catch(() => {});
   } catch (e) { stopLive(e.message || String(e)); }
@@ -952,7 +975,7 @@ function getCfg() {
   };
 }
 function saveCfg() {
-  try { localStorage.setItem('jfm_cfg', JSON.stringify(getCfg())); } catch {}
+  try { const { password, ...safe } = getCfg(); localStorage.setItem('jfm_cfg', JSON.stringify(safe)); } catch {}   // hindi sine-save ang password
   $('#o_mountbox').style.display = $('#o_mode').value === 'icecast' ? 'block' : 'none';
 }
 try {
@@ -960,7 +983,7 @@ try {
   if (c) {
     $('#o_mode').value = c.mode || 'icecast'; $('#o_host').value = c.host || ''; $('#o_port').value = c.port || '';
     $('#o_mount').value = c.mount || ''; $('#o_user').value = c.user || 'source';
-    $('#o_pass').value = c.password || ''; $('#o_br').value = c.bitrate || '128k';
+    $('#o_br').value = c.bitrate || '128k';
   }
 } catch {}
 ['o_mode', 'o_host', 'o_port', 'o_mount', 'o_user', 'o_pass', 'o_br'].forEach((id) => {
@@ -978,9 +1001,80 @@ document.addEventListener('visibilitychange', () => {
 });
 </script>
 <script>
+// BEAT MATCHING: BPM mula sa bass envelope ng waveform analysis, tempo slider ±16% (pitch ay hindi nagbabago), SYNC = tempo + beat phase
+function detectBeat(L) {
+  const n = L.length, o = new Float32Array(n);
+  for (let b = 2; b < n; b++) o[b] = Math.max(0, L[b] - 0.5 * (L[b - 1] + L[b - 2]));
+  const s0 = Math.max(0, (n >> 1) - 6000), s1 = Math.min(n, s0 + 12000);
+  let mean = 0; for (let i = s0; i < s1; i++) mean += o[i]; mean /= Math.max(1, s1 - s0);
+  const r = new Float32Array(92);
+  for (let lag = 30; lag <= 90; lag++) { let a = 0; for (let i = s0; i + lag < s1; i++) a += (o[i] - mean) * (o[i + lag] - mean); r[lag] = a / Math.max(1, s1 - s0 - lag); }
+  let best = 0, bpm = 0;
+  for (let t = 70; t <= 180; t += 0.1) {
+    const lg = 6000 / t, i = Math.floor(lg), f = lg - i;
+    const v = (r[i] * (1 - f) + r[i + 1] * f) * (0.6 + 0.4 * Math.exp(-0.5 * Math.pow(Math.log2(t / 120) / 0.6, 2)));
+    if (v > best) { best = v; bpm = t; }
+  }
+  return { bpm: best > 0 ? Math.round(bpm * 10) / 10 : 0, onset: o };
+}
+function beatPhase(d, t) {                 // nasaan ang kanta sa loob ng beat (0..1), kinukuha sa paligid ng kasalukuyang posisyon
+  const o = d.onset, lag = 6000 / d.bpm, c = Math.round(t * 100);
+  const w0 = Math.max(0, c - 400), w1 = Math.min(o.length, c + 400);
+  let bp = 0, bs = -1;
+  for (let p = 0; p < lag; p++) { let sum = 0; for (let x = w0 + p; x < w1; x += lag) sum += o[Math.round(x)] || 0; if (sum > bs) { bs = sum; bp = p; } }
+  const ph = ((t - (w0 + bp) / 100) / (60 / d.bpm)) % 1;
+  return ph < 0 ? ph + 1 : ph;
+}
+function setTempo(d, v) { v = Math.max(-160, Math.min(160, v)); d.tempo = v; d.audio.playbackRate = 1 + v / 1000; d.tSl.value = v; bpmUpdate(d); }
+function bpmUpdate(d) {
+  if (!d.bpmEl) return;
+  d.bpmEl.textContent = d.bpm ? (d.bpm * (1 + d.tempo / 1000)).toFixed(1) + ' BPM (' + (d.tempo >= 0 ? '+' : '') + (d.tempo / 10).toFixed(1) + '%)' : (d.wfState === 'busy' ? 'BPM …' : '— BPM');
+}
+function syncDeck(d, o, quiet) {
+  if (!d.bpm || !o.bpm || !d.onset || !o.onset) { if (!quiet) toast('BPM not detected on both decks yet (files over 8MB are not analyzed).'); return false; }
+  const need = (o.bpm * (1 + o.tempo / 1000) / d.bpm - 1) * 1000;
+  if (Math.abs(need) > 160) { if (!quiet) toast('Tempo difference is too big to match (max ±16%).'); return false; }
+  setTempo(d, need);
+  let dl = beatPhase(o, o.audio.currentTime) - beatPhase(d, d.audio.currentTime);
+  dl -= Math.round(dl);
+  d.audio.currentTime = Math.max(0, d.audio.currentTime + dl * 60 / d.bpm);
+  return true;
+}
+function glideTempo(d) {                   // pagkatapos ng auto-mix, dahan-dahang ibalik sa orihinal na tempo
+  const t0 = performance.now(), v0 = d.tempo, tok = d.loads;
+  const iv = setInterval(() => { if (d.loads !== tok) return clearInterval(iv); const k = Math.min(1, (performance.now() - t0) / 8000); setTempo(d, v0 * (1 - k)); if (k >= 1) clearInterval(iv); }, 100);
+}
+$('#fxToggle').onclick = () => {          // lalabas lang ang Effects kapag kailangan
+  const c = $('#fxCard'), on = c.hidden;
+  c.hidden = !on; $('#fxToggle').classList.toggle('on', on); $('#fxToggle').setAttribute('aria-expanded', on);
+  if (on) c.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+};
+let beatMatch = false;
+$('#bmBtn').onclick = () => { beatMatch = !beatMatch; $('#bmBtn').textContent = '🎯 BEAT-MATCH: ' + (beatMatch ? 'ON' : 'OFF'); $('#bmBtn').classList.toggle('on', beatMatch); };
+decks.forEach((d) => {
+  d.tempo = 0; d.bpm = 0; d.onset = null;
+  const row = document.createElement('div'); row.className = 'bpmrow';
+  row.innerHTML = '<div class="bpmtop"><span class="bpmv" title="Tap to reset tempo"></span><button class="syncbtn" data-a="sync">SYNC</button></div><input type="range" min="-160" max="160" step="any" value="0" aria-label="Tempo">';
+  $('#deck' + d.i + ' .btns').before(row);
+  d.bpmEl = row.querySelector('.bpmv'); d.tSl = row.querySelector('input');
+  d.audio.preservesPitch = true;
+  d.tSl.oninput = () => setTempo(d, parseFloat(d.tSl.value));
+  d.bpmEl.onclick = () => setTempo(d, 0);
+  row.querySelector('.syncbtn').onclick = () => { ctx.resume(); const o = decks[1 - d.i]; if (syncDeck(d, o)) toast('Deck ' + (d.i + 1) + ' synced to Deck ' + (o.i + 1) + ' (' + (d.bpm * (1 + d.tempo / 1000)).toFixed(1) + ' BPM)'); };
+  d.audio.addEventListener('loadstart', () => setTempo(d, 0));
+  d.audio.addEventListener('emptied', () => { if (d.idx < 0) { d.bpm = 0; d.onset = null; } bpmUpdate(d); });
+  bpmUpdate(d);
+});
+</script>
+<script>
 (function(){const r=[...document.querySelectorAll('input[type=range]')];
 function f(){r.forEach(e=>{const p=(e.value-e.min)/(e.max-e.min)*100;e.style.setProperty('--v',p+'%');});}
 setInterval(f,100);f();})();
+</script>
+<script>
+document.querySelectorAll('label:not([for])').forEach((l) => { const n = l.nextElementSibling; if (n && /^(INPUT|SELECT)$/.test(n.tagName) && !n.getAttribute('aria-label')) n.setAttribute('aria-label', l.textContent.replace(/\s+/g, ' ').trim()); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal:not([hidden])').forEach((m) => showModal('#' + m.id, false)); });
+document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('li .x')) { e.preventDefault(); e.target.click(); } });
 </script>
 <script>
 // WAVEFORM ng Deck 1 at Deck 2 (estilong Virtual DJ): kulay ayon sa bass/mid/high, may playhead sa gitna, at overview ng buong kanta
@@ -995,11 +1089,13 @@ setInterval(f,100);f();})();
   // PRE-ANALYSIS: binabasa ang buong kanta nang isang beses at kinukuha ang laki ng bass/mid/high bawat 10ms
   window.wfAnalyze = async function (d) {
     const tok = d.wfTok = (d.wfTok || 0) + 1, file = d.list[d.idx];
-    d.wf = null; d.wfState = 'busy';
+    d.wf = null; d.wfState = 'busy'; d.bpm = 0; d.onset = null; bpmUpdate(d);
     if (!file) { d.wfState = 'none'; return; }
-    if (file.size > WF_MAX) { d.wfState = 'live'; return; }
+    if (file.size > WF_MAX) { d.wfState = 'live'; bpmUpdate(d); return; }
     try {
-      const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+      const AC = window.OfflineAudioContext || window.webkitOfflineAudioContext;   // 11025 Hz = ~4x mas maliit na memory
+      let ac; try { ac = new AC(1, 1, 11025); } catch { ac = ctx; }
+      const buf = await ac.decodeAudioData(await file.arrayBuffer());
       if (tok !== d.wfTok) return;
       const ch0 = buf.getChannelData(0), ch1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : ch0;
       const sr = buf.sampleRate, n = buf.length, spb = Math.max(1, Math.round(sr / BPS)), bins = Math.ceil(n / spb);
@@ -1035,8 +1131,9 @@ setInterval(f,100);f();})();
         ov[c] = mx;
       }
       d.wf = { L, M, H, bins, ov };
-      d.wfState = 'ready';
-    } catch (err) { if (tok === d.wfTok) d.wfState = 'live'; }
+      try { const bd = detectBeat(L); d.bpm = bd.bpm; d.onset = bd.onset; } catch {}
+      d.wfState = 'ready'; bpmUpdate(d);
+    } catch (err) { if (tok === d.wfTok) { d.wfState = 'live'; bpmUpdate(d); } }
   };
 
   const specs = decks.map((d) => {
