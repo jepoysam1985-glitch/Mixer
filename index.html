@@ -1135,14 +1135,13 @@ async function sendNowPlaying(title) {
   const C = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.CapacitorHttp;
   if (!C) { if (!npWarned) { npWarned = true; toast('Now-playing title needs the Android app (CapacitorHttp not found).'); } return; }
   const c = getCfg(), headers = {}, tries = [];
-  const scheme = String(c.port) === '443' ? 'https' : 'http';
+  const bases = String(c.port) === '443' ? ['https://' + c.host] : ['https://' + c.host, 'http://' + c.host + ':' + c.port];   // HTTPS muna: bawal ang cleartext HTTP sa Android
   if (c.mode === 'icecast') {
     const m = c.mount.startsWith('/') ? c.mount : '/' + c.mount;
     headers.Authorization = 'Basic ' + b64(te(c.user + ':' + c.password));
-    const mk = (mm) => scheme + '://' + c.host + ':' + c.port + '/admin/metadata?mode=updinfo&charset=UTF-8&mount=' + encodeURIComponent(mm) + '&song=' + encodeURIComponent(title);
-    tries.push(mk(m));
-    if (/\/source$/.test(m)) tries.push(mk(m.replace(/\/source$/, '')));   // Zeno: minsan walang "/source" ang mount sa metadata
-    else tries.push(mk(m + '/source'));
+    const mounts = [m];
+    if (/\/source$/.test(m)) mounts.push(m.replace(/\/source$/, '')); else mounts.push(m + '/source');
+    for (const mm of mounts) for (const bs of bases) tries.push(bs + '/admin/metadata?mode=updinfo&charset=UTF-8&mount=' + encodeURIComponent(mm) + '&song=' + encodeURIComponent(title));
   } else {
     tries.push('http://' + c.host + ':' + (parseInt(c.port, 10) - 1) + '/admin.cgi?pass=' + encodeURIComponent(c.password) + '&mode=updinfo&song=' + encodeURIComponent(title));
   }
@@ -1152,8 +1151,8 @@ async function sendNowPlaying(title) {
       const r = await C.request({ url, method: 'GET', headers, connectTimeout: 5000, readTimeout: 5000 });
       if (r && r.status < 400) { npWarned = false; toast('Now playing sent: ' + title); return; }
       const body = r && r.data ? String(typeof r.data === 'string' ? r.data : JSON.stringify(r.data)).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 70) : '';
-      last = 'HTTP ' + (r && r.status) + (body ? ' ' + body : '') + ' @' + new URL(url).pathname.slice(0, 40);
-    } catch (e) { last = (e && e.message) || 'network error'; }
+      if (!last) last = 'HTTP ' + (r && r.status) + (body ? ' ' + body : '') + ' @' + new URL(url).pathname.slice(0, 40);
+    } catch (e) { if (!last) last = (e && e.message) || 'network error'; }
   }
   if (!npWarned) { npWarned = true; toast('The server did not accept the title (' + last + ').'); }
 }
