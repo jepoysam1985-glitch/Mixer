@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0a12">
+<meta name="theme-color" content="#0b0c0f">
 <title>JEIANNE FM Mixer</title>
 <script src="lame.min.js" defer></script>
 <style>
@@ -20,7 +20,7 @@ h1{font-size:15px;letter-spacing:3px;text-align:center;margin:6px 0 14px;font-we
 .sheet{width:100%;max-width:520px;margin:auto 0;box-shadow:0 10px 40px #000}
 .sheethead{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .sheethead b{font-size:14px}
-#closeSettings,#closeMix{flex:none;width:42px;height:42px;border-radius:50%;font-size:18px}
+#closeSettings,#closeMix,#closeEq{flex:none;width:42px;height:42px;border-radius:50%;font-size:18px}
 .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px;box-shadow:0 6px 24px #0008}
 .decks{display:grid;grid-template-columns:minmax(0,1fr) 44px minmax(0,1fr);gap:5px;margin-bottom:12px}
 .decks .card{margin:0}
@@ -155,7 +155,7 @@ button.on:not(.pad){background:linear-gradient(180deg,#ffffff55,#ffffff00 55%),v
 .deck button.on:not(.pad){background:linear-gradient(180deg,#ffffff66,#ffffff00 55%),var(--c);color:#06060c;text-shadow:none;box-shadow:inset 0 1px 0 #fff9,0 0 14px var(--c)}
 #micBtn.on{background:linear-gradient(180deg,#ffffff55,#ffffff00 55%),var(--ok);color:#04130a;text-shadow:none;box-shadow:inset 0 1px 0 #fff8,0 0 16px #22c55e99}
 #micMonBtn.on{background:linear-gradient(180deg,#ffffff55,#ffffff00 55%),var(--acc);color:#fff;box-shadow:inset 0 1px 0 #fff8,0 0 14px var(--acc)}
-#gearBtn,#mixBtn,#closeSettings,#closeMix{background:radial-gradient(circle at 35% 28%,#8a8d98,#3a3d45 55%,#1f2025);border:2px solid #0a0a0d;box-shadow:inset 0 1px 0 #fff5,0 3px 6px #000a}
+#gearBtn,#mixBtn,#closeSettings,#closeMix,#closeEq{background:radial-gradient(circle at 35% 28%,#8a8d98,#3a3d45 55%,#1f2025);border:2px solid #0a0a0d;box-shadow:inset 0 1px 0 #fff5,0 3px 6px #000a}
 #liveBtn{border:2px solid #2b0a10;border-bottom-width:4px;border-radius:10px;background:linear-gradient(180deg,#ff6a6a,#d3162d 55%,#a50e22);color:#fff;text-shadow:0 -1px 0 #0006;box-shadow:inset 0 1px 0 #ffffff66,0 0 14px #ff335577,0 4px 8px #000a}
 #liveBtn:active{border-bottom-width:2px}
 #liveBtn.live{background:linear-gradient(180deg,#ff8a8a,#ff2b45 55%,#c4122b)}
@@ -200,8 +200,69 @@ input[type=range]::-webkit-slider-thumb{width:22px;height:34px}   /* mas madalin
 @media (max-width:340px){#duckBtn{font-size:8.5px}}
 button{touch-action:manipulation;user-select:none;-webkit-user-select:none}
 #toast{position:fixed;left:12px;right:12px;bottom:max(14px,env(safe-area-inset-bottom));z-index:200;max-width:520px;margin:0 auto;padding:10px 14px;border-radius:8px;background:#1c1d22;border:1px solid #ffb347;color:#ffb347;font-size:13px;line-height:1.4;box-shadow:0 8px 24px #000c;pointer-events:none;opacity:0;transform:translateY(8px);transition:opacity .2s,transform .2s}#toast.show{opacity:1;transform:none}
-.bpmtop{display:flex;align-items:center;gap:6px;margin-top:8px}.bpmv{flex:1;min-width:0;font:11px ui-monospace,monospace;color:var(--c);text-shadow:0 0 5px var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.syncbtn{flex:none;width:54px;height:30px;font-size:10.5px}.bpmrow input{margin:2px 0 0}#bmBtn,#fxToggle{height:46px;font-size:11px;padding:0 4px}#xfCard .row button{white-space:normal;line-height:1.15;min-width:0}
-.vmpair{display:flex;gap:4px;flex:1;justify-content:center}.vmcol{display:flex;flex-direction:column;align-items:center;gap:6px}.vmcol .vm{width:14px}.vmcol .vl{font-size:12px}
+.bpmtop{display:flex;align-items:center;gap:6px;margin-top:8px}.bpmv{flex:1;min-width:0;font:11px ui-monospace,monospace;color:var(--c);text-shadow:0 0 5px var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.syncbtn{flex:none;width:54px;height:30px;font-size:10.5px}.bpmrow input{margin:2px 0 0}#bmBtn,#fxToggle{height:46px;font-size:11px;padding:0 4px}#micCard #fxToggle{height:60px;font-size:10.5px;line-height:1.2;white-space:pre-line;padding:0 2px;min-width:0;letter-spacing:0}
+#monBtn.on:not(.pad){background:linear-gradient(180deg,#ffffff55,#ffffff00 55%),var(--c1);border-color:#000;color:#06060c;text-shadow:none;box-shadow:inset 0 1px 0 #fff8,0 0 14px var(--c1)}
+.volrow{display:flex;align-items:center;gap:8px}.volrow input[type=range]{flex:1;min-width:0}.eqbtn{flex:none;width:44px;height:34px;font-size:11px}
+.eqbtn{flex:none;width:44px;height:34px;font-size:11px}
+.deck .btns{grid-template-columns:repeat(3,minmax(0,1fr))}.deck .btns .cltoggle{grid-column:span 2;font-size:10.5px;padding:0 2px;white-space:nowrap;letter-spacing:0}
+.padsrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin:4px 0 2px}.padsrow button{height:30px;font-size:11px;padding:0;min-width:0}
+.padsrow .hcue{border:1px dashed var(--pc);border-bottom-width:3px;color:var(--pc)}
+.padsrow .hcue.set{background:var(--pc)!important;color:#06060c;text-shadow:none;box-shadow:0 0 10px var(--pc)}
+#xfCard .row button{white-space:normal;line-height:1.15;min-width:0}
+.vmpair{display:flex;gap:3px;flex:1;justify-content:center}.vmcol{display:flex;flex-direction:column;align-items:center;gap:4px}.vmcol .vm{width:8px;min-height:100px}.vmcol .vl{font-size:9px}
+.decks{grid-template-columns:minmax(0,1fr) 26px minmax(0,1fr);gap:4px}.card.vmeter{padding:6px 0}
+/* EFFECT PADS: realistic na rubber pad na may LED backlight (bilog pa rin) */
+.fxgrid{gap:12px 8px}
+.pad{max-width:44px;border-radius:50%;border:1px solid rgba(0,0,0,.55);font-size:15px;font-weight:800;color:rgba(0,0,0,.62);text-shadow:0 1px 0 rgba(255,255,255,.4),0 -1px 0 rgba(0,0,0,.25);
+  background:radial-gradient(circle at 50% 42%,rgba(255,255,255,.18) 0,rgba(255,255,255,0) 60%),linear-gradient(180deg,rgba(255,255,255,.22),rgba(0,0,0,.38)),var(--pc);
+  box-shadow:inset 0 -5px 7px rgba(0,0,0,.45),inset 0 3px 5px rgba(255,255,255,.35),inset 0 0 0 1px rgba(255,255,255,.08),0 0 0 3px #050507,0 0 0 4px #4b4e58,0 6px 8px 2px rgba(0,0,0,.75);
+  transition:transform .06s,box-shadow .08s,filter .08s}
+.pad:not(.empty)::before{content:"";position:absolute;left:16%;right:16%;top:6%;height:32%;border-radius:50% 50% 45% 45%/70% 70% 35% 35%;background:linear-gradient(180deg,rgba(255,255,255,.6),rgba(255,255,255,0));pointer-events:none}
+.pad:active{transform:translateY(2px) scale(.97);filter:brightness(.92);box-shadow:inset 0 -2px 5px rgba(0,0,0,.55),inset 0 3px 7px rgba(0,0,0,.35),0 0 0 3px #050507,0 0 0 4px #4b4e58,0 2px 3px 1px rgba(0,0,0,.8)}
+.pad.on{transform:translateY(1px);color:rgba(0,0,0,.55);
+  background:radial-gradient(circle at 50% 45%,#fff 0,rgba(255,255,255,.55) 38%,rgba(255,255,255,0) 72%),linear-gradient(180deg,rgba(255,255,255,.25),rgba(0,0,0,.18)),var(--pc);
+  box-shadow:inset 0 -3px 6px rgba(0,0,0,.25),inset 0 2px 4px rgba(255,255,255,.7),0 0 0 3px #050507,0 0 0 4px var(--pc),0 0 14px 4px var(--pc),0 0 26px 6px var(--pc)}
+.pad.empty{border:1px solid #000;color:var(--pc);opacity:.85;font-size:20px;font-weight:300;text-shadow:0 0 6px var(--pc);
+  background:radial-gradient(circle at 50% 35%,#2c2e36 0,#15161b 70%,#0b0b0e 100%);
+  box-shadow:inset 0 4px 8px rgba(0,0,0,.85),inset 0 0 0 2px rgba(0,0,0,.6),inset 0 -1px 0 rgba(255,255,255,.08),0 0 0 3px #050507,0 0 0 4px #4b4e58,0 4px 6px 1px rgba(0,0,0,.6)}
+.pad.empty:active{transform:translateY(1px)}
+/* ===== THEME: VIRTUALDJ STYLE (maitim na graphite + asul; CSS lang, walang binago sa takbo ng app) ===== */
+:root{--bg:#0b0c0f;--panel:#16181c;--panel2:#23262c;--line:#0a0b0d;--txt:#e6ecf5;--dim:#9aa5b5;--c1:#2e9bff;--c2:#ff3b3b;--acc:#2e9bff;--ok:#2bd46b;--live:#ff3b3b;--edge:#0a0b0d}
+html{background:#0b0c0f}
+body{background:radial-gradient(120% 35% at 50% -5%,#1b2433 0,transparent 70%),linear-gradient(180deg,#101216,#0b0c0f);font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+h1{background:none;-webkit-background-clip:initial;background-clip:initial;color:#dfe7f2;letter-spacing:4px;filter:none;text-shadow:0 1px 0 #000,0 0 12px #2e9bff55}
+label,.vl{color:#8b94a3;text-shadow:none}
+label b{color:#e6ecf5}
+/* mga panel: flat na graphite na may manipis na gilid */
+.card,.card:has(#liveBtn){background:linear-gradient(180deg,#262a31,#171a1f);border:1px solid #07080a;border-radius:6px;box-shadow:inset 0 1px 0 #ffffff17,0 6px 14px #000c}
+.card:has(#liveBtn){box-shadow:inset 0 1px 0 #ffffff17,0 -8px 24px #000d}
+.card.deck{box-shadow:inset 0 1px 0 #ffffff17,0 6px 14px #000c}
+.sheet::before,#micCard::before,#fxCard::before,#mixCtl::before,#xfCard::before{background:none}
+/* mga button: dark na may asul na ilaw kapag ON */
+button:not(.pad){background:linear-gradient(180deg,#3c4048,#262930);color:#d3dbe6;text-shadow:none;border:1px solid #08090b;border-bottom:1px solid #08090b;border-radius:4px;box-shadow:inset 0 1px 0 #ffffff1f,0 1px 2px #000b}
+button:not(.pad):active{background:linear-gradient(180deg,#1b1d22,#2a2d34);transform:none;box-shadow:inset 0 2px 4px #000b}
+button.on:not(.pad){background:linear-gradient(180deg,#5db4ff,#2e9bff 45%,#1c74cf);color:#fff;text-shadow:0 1px 0 #0006;border-color:#0b3c6d;box-shadow:inset 0 1px 0 #ffffff66,0 0 12px #2e9bff99}
+.deck button.on:not(.pad){background:linear-gradient(180deg,#ffffff55,#ffffff00 55%),var(--c);color:#04101c;text-shadow:none;border-color:#000;box-shadow:inset 0 1px 0 #fff8,0 0 12px var(--c)}
+#gearBtn,#mixBtn,#closeSettings,#closeMix,#closeEq{background:radial-gradient(circle at 35% 28%,#5a606c,#2a2d35 60%,#14161a);color:#d3dbe6;border:2px solid #07080a;box-shadow:inset 0 1px 0 #ffffff33,0 0 0 1px #2e9bff55,0 3px 6px #000a}
+.padsrow .hcue{background:linear-gradient(180deg,#22252b,#101216)}
+/* faders: manipis na slot, asul na fill, metal na takip */
+input[type=range]{background:linear-gradient(90deg,var(--cc) var(--v),#07080a var(--v))}
+input[type=range]::-webkit-slider-thumb,#cross::-webkit-slider-thumb{background:linear-gradient(#e6f2ff,#e6f2ff) center/2px 100% no-repeat,repeating-linear-gradient(90deg,#00000030 0 2px,transparent 2px 4px),linear-gradient(90deg,#2b2e35,#7b8291 50%,#2b2e35)}
+#cross{background:linear-gradient(#e6f2ff,#e6f2ff) center/2px 100% no-repeat,linear-gradient(90deg,var(--c1) 0 8px,#07080a 8px calc(100% - 8px),var(--c2) calc(100% - 8px) 100%)}
+/* display */
+.now,#status{background:linear-gradient(180deg,#07080b,#0d0f13);box-shadow:inset 0 3px 8px #000,0 1px 0 #ffffff14}
+.now{font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-weight:700;color:#e6ecf5;text-shadow:none;border-radius:3px}
+.time{color:var(--c);text-shadow:none;opacity:1}
+#status{color:#8fc7ff;text-shadow:none}
+.spec{background:#050608;border-radius:3px}
+input[type=text],input[type=password],input[type=number],select{background:linear-gradient(180deg,#07080a,#0e1014);color:#e6ecf5}
+li{background:#101216;color:#d3dbe6}
+li.cur{background:#14243a;color:#fff;text-shadow:none}
+.cap{color:#b5c0d0}
+#toast{border-color:#2e9bff;color:#bfe0ff;background:#101216}
+/* EFFECT PADS: squarish (parisukat na may bilog na sulok) */
+.pad{border-radius:10px}
+.pad:not(.empty)::before{border-radius:7px 7px 16px 16px/7px 7px 10px 10px;left:10%;right:10%;top:7%;height:30%}
 </style>
 </head>
 <body>
@@ -236,6 +297,20 @@ button{touch-action:manipulation;user-select:none;-webkit-user-select:none}
     <option value="192k">192 kbps</option>
   </select>
   <button id="closeSettings2" style="width:100%;height:50px;margin-top:14px;background:var(--acc);border-color:var(--acc);color:#fff;font-size:13.5px">Done</button>
+</div>
+</div>
+
+<div class="modal" id="eqModal" hidden>
+<div class="card sheet" role="dialog" aria-modal="true" aria-label="EQ Settings">
+  <div class="sheethead"><b id="eqTitle">EQ</b><button id="closeEq" aria-label="Close EQ settings">✕</button></div>
+  <label style="margin-top:14px">Low (bass): <b id="eqv0">0.0 dB</b></label>
+  <input type="range" min="-100" max="100" value="0" id="eq0" aria-label="EQ Low">
+  <label>Mid (boses): <b id="eqv1">0.0 dB</b></label>
+  <input type="range" min="-100" max="100" value="0" id="eq1" aria-label="EQ Mid">
+  <label>High (treble): <b id="eqv2">0.0 dB</b></label>
+  <input type="range" min="-100" max="100" value="0" id="eq2" aria-label="EQ High">
+  <button id="eqReset" style="width:100%;height:44px;margin-top:14px;font-size:12.5px">Reset EQ</button>
+  <button id="closeEq2" style="width:100%;height:50px;margin-top:16px;background:var(--acc);border-color:var(--acc);color:#fff;font-size:13.5px">Done</button>
 </div>
 </div>
 
@@ -328,7 +403,6 @@ button{touch-action:manipulation;user-select:none;-webkit-user-select:none}
   <div class="row" style="margin-top:0">
     <button id="autoBtn">🔀 AUTO-MIX: OFF</button>
     <button id="bmBtn">🎯 BEAT-MATCH: OFF</button>
-    <button id="fxToggle" aria-expanded="false" aria-controls="fxCard">🔔 EFFECTS</button>
   </div>
 </div>
 
@@ -342,9 +416,12 @@ MIC
 OFF</button>
     <button class="big" id="liveBtn">🔴
 GO LIVE</button>
-    <button id="monBtn">🎧
+    <button id="monBtn" class="on">🎧
 Monitor
 ON</button>
+    <button id="fxToggle" aria-expanded="false" aria-controls="fxCard">🔔
+Effects
+OFF</button>
   </div>
   <div id="status">Not live</div>
 </div>
@@ -417,7 +494,7 @@ const decks = [0, 1].map((i) => {
   const fader = ctx.createGain();
   const cross = ctx.createGain();
   src.connect(fader); fader.connect(cross); cross.connect(tracksGain);
-  const d = { i, audio, fader, cross, list: [], idx: -1, muted: false, locked: false, vol: 1, loads: 0, orphan: false };
+  const d = { i, audio, src, fader, cross, list: [], idx: -1, muted: false, locked: false, vol: 1, loads: 0, orphan: false };
   audio.addEventListener('ended', () => onEnded(d));
   audio.addEventListener('timeupdate', () => {
     $('#time' + i).textContent = fmt(audio.currentTime) + ' / ' + fmt(audio.duration || 0);
@@ -728,6 +805,7 @@ $('#monBtn').onclick = () => {
   mon = !mon;
   monitor.gain.value = mon ? 1 : 0;
   $('#monBtn').textContent = '🎧\nMonitor\n' + (mon ? 'ON' : 'OFF');
+  $('#monBtn').classList.toggle('on', mon);
 };
 
 async function reopenMic() {              // habang nagmo-monitor, patay ang echo-cancel/noise-suppress ng phone (kinakain nito ang boses sa loop)
@@ -1027,7 +1105,7 @@ function glideTempo(d) {                   // pagkatapos ng auto-mix, dahan-daha
 }
 $('#fxToggle').onclick = () => {          // lalabas lang ang Effects kapag kailangan
   const c = $('#fxCard'), on = c.hidden;
-  c.hidden = !on; $('#fxToggle').classList.toggle('on', on); $('#fxToggle').setAttribute('aria-expanded', on);
+  c.hidden = !on; $('#fxToggle').classList.toggle('on', on); $('#fxToggle').setAttribute('aria-expanded', on); $('#fxToggle').textContent = '🔔\nEffects\n' + (on ? 'ON' : 'OFF');
   if (on) c.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 };
 let beatMatch = false;
@@ -1046,6 +1124,93 @@ decks.forEach((d) => {
   d.audio.addEventListener('emptied', () => { if (d.idx < 0) { d.bpm = 0; d.onset = null; } bpmUpdate(d); });
   bpmUpdate(d);
 });
+</script>
+<script>
+// EQ bawat deck: LOW / MID / HIGH (-40 dB = kill, 0 = flat, +6 dB). Ang "EQ" button sa tabi ng Volume ang nagbubukas ng settings.
+(function () {
+  const BANDS = [['lowshelf', 250], ['peaking', 1000], ['highshelf', 3500]];
+  const eqDb = (v) => (v >= 0 ? v * 0.06 : v * 0.4);
+  const eqTxt = (v) => (v <= -98 ? 'KILL' : (v > 0 ? '+' : '') + eqDb(v).toFixed(1) + ' dB');
+  let cur = decks[0];
+  decks.forEach((d) => {
+    d.eqNodes = BANDS.map(([type, f]) => { const n = ctx.createBiquadFilter(); n.type = type; n.frequency.value = f; if (type === 'peaking') n.Q.value = 0.8; return n; });
+    d.eqVals = [0, 0, 0];
+    d.fader.disconnect();
+    d.fader.connect(d.eqNodes[0]); d.eqNodes[0].connect(d.eqNodes[1]); d.eqNodes[1].connect(d.eqNodes[2]); d.eqNodes[2].connect(d.cross);
+    const vol = $('#deck' + d.i + ' [data-a=vol]');
+    const row = document.createElement('div'); row.className = 'volrow';
+    const b = document.createElement('button'); b.className = 'eqbtn'; b.textContent = 'EQ'; b.setAttribute('aria-label', 'Deck ' + (d.i + 1) + ' EQ settings');
+    vol.before(row); row.append(vol, b); d.eqBtn = b;
+    b.onclick = () => {
+      cur = d; $('#eqTitle').textContent = 'EQ · Deck ' + (d.i + 1);
+      [0, 1, 2].forEach((k) => { $('#eq' + k).value = d.eqVals[k]; $('#eqv' + k).textContent = eqTxt(d.eqVals[k]); });
+      showModal('#eqModal', true);
+    };
+  });
+  function setBand(k, v) {
+    cur.eqVals[k] = v; cur.eqNodes[k].gain.setTargetAtTime(eqDb(v), ctx.currentTime, 0.02);
+    $('#eqv' + k).textContent = eqTxt(v); cur.eqBtn.classList.toggle('on', cur.eqVals.some((x) => x !== 0));
+  }
+  [0, 1, 2].forEach((k) => {
+    $('#eq' + k).oninput = (e) => { let v = parseFloat(e.target.value); if (Math.abs(v) <= 4) { v = 0; e.target.value = 0; } setBand(k, v); };
+  });
+  $('#eqReset').onclick = () => [0, 1, 2].forEach((k) => { $('#eq' + k).value = 0; setBand(k, 0); });
+  $('#closeEq').onclick = $('#closeEq2').onclick = () => showModal('#eqModal', false);
+})();
+</script>
+<script>
+// PERFORMANCE PADS (nakatago hanggang pindutin ang CUE / LOOP button): 4 hot cue (tap = itakda o tumalon; pindutin nang matagal = burahin) at loops na 1/2/4/8 beats (naka-snap sa beat kapag may BPM; tap ulit = labas)
+(function () {
+  const COL = ['#ef4444', '#eab308', '#22c55e', '#3b82f6'], LET = ['A', 'B', 'C', 'D'], LOOPS = [1, 2, 4, 8];
+  decks.forEach((d) => {
+    d.cues = [null, null, null, null]; d.loop = null;
+    const wrap = document.createElement('div'); wrap.className = 'padsrow';
+    const wrap2 = document.createElement('div'); wrap2.className = 'padsrow';
+    const hb = [], lb = [];
+    const panel = document.createElement('div'); panel.className = 'clpanel'; panel.hidden = true;
+    const tg = document.createElement('button'); tg.className = 'cltoggle'; tg.setAttribute('aria-expanded', 'false');
+    tg.onclick = () => { panel.hidden = !panel.hidden; tg.setAttribute('aria-expanded', String(!panel.hidden)); render(); };
+    const render = () => {
+      tg.textContent = 'CUE/LOOP' + (d.loop ? ' ↻' : '') + (d.cues.some((c) => c !== null) ? ' ●' : ''); tg.classList.toggle('on', !panel.hidden);
+      hb.forEach((b, k) => { b.classList.toggle('set', d.cues[k] !== null); b.setAttribute('aria-label', 'Deck ' + (d.i + 1) + ' hot cue ' + LET[k] + (d.cues[k] !== null ? ' at ' + fmt(d.cues[k]) : ' empty')); });
+      lb.forEach((b, k) => b.classList.toggle('on', !!d.loop && d.loop.n === LOOPS[k]));
+    };
+    COL.forEach((c, k) => {
+      const b = document.createElement('button'); b.className = 'hcue'; b.textContent = LET[k]; b.style.setProperty('--pc', c);
+      let timer = 0, long = false;
+      b.onpointerdown = () => { long = false; clearTimeout(timer); timer = setTimeout(() => { long = true; d.cues[k] = null; render(); try { navigator.vibrate && navigator.vibrate(15); } catch {} }, 600); };
+      b.onpointerup = b.onpointerleave = b.onpointercancel = () => clearTimeout(timer);
+      b.oncontextmenu = (e) => e.preventDefault();
+      b.onclick = () => {
+        if (long) { long = false; return; }
+        if (d.idx < 0) return;
+        if (d.cues[k] === null) { d.cues[k] = d.audio.currentTime; render(); } else d.audio.currentTime = d.cues[k];
+      };
+      hb.push(b); wrap.append(b);
+    });
+    LOOPS.forEach((n) => {
+      const b = document.createElement('button'); b.className = 'lpbtn'; b.textContent = '↻' + n; b.setAttribute('aria-label', 'Deck ' + (d.i + 1) + ' loop ' + n + ' beats');
+      b.onclick = () => {
+        if (d.idx < 0) return;
+        if (d.loop && d.loop.n === n) { d.loop = null; render(); return; }
+        const t = d.audio.currentTime;
+        let bpm = d.bpm, start = t;
+        if (bpm && d.onset) start = Math.max(0, t - beatPhase(d, t) * 60 / bpm); else { bpm = 120; toast('BPM not detected: loop uses 120 BPM.'); }
+        d.loop = { a: start, b: start + n * 60 / bpm, n }; render();
+      };
+      lb.push(b); wrap2.append(b);
+    });
+    panel.append(wrap, wrap2);
+    const bt = $('#deck' + d.i + ' .btns'); bt.append(tg); bt.after(panel);
+    const reset = () => { d.cues = [null, null, null, null]; d.loop = null; render(); };
+    d.audio.addEventListener('loadstart', reset); d.audio.addEventListener('emptied', reset);
+    render();
+  });
+  setInterval(() => decks.forEach((d) => {            // balik sa simula ng loop (tinatandaan ang labis para hindi madulas ang beat)
+    const l = d.loop;
+    if (l && !d.audio.paused && d.audio.currentTime >= l.b) d.audio.currentTime = l.a + (d.audio.currentTime - l.b);
+  }), 10);
+})();
 </script>
 <script>
 (function(){const r=[...document.querySelectorAll('input[type=range]')];
@@ -1129,18 +1294,51 @@ document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key ==
              color: getComputedStyle(root).getPropertyValue('--c').trim() || '#22d3ee' };
   });
 
+  // GALAWIN ANG SPECTRUM: i-drag pakaliwa/pakanan ang waveform para ilipat ang tugtog (parang scrub); i-tap o i-drag ang manipis na overview sa ibaba para tumalon sa kahit saang bahagi ng kanta
+  specs.forEach((sp) => {
+    const cv = sp.cv, d = sp.d;
+    let drag = null;
+    cv.style.touchAction = 'pan-y'; cv.style.userSelect = 'none'; cv.style.webkitUserSelect = 'none'; cv.style.cursor = 'ew-resize';
+    const dur = () => (isFinite(d.audio.duration) ? d.audio.duration : 0);
+    const seek = (t) => { const D = dur(); if (D) d.audio.currentTime = Math.max(0, Math.min(D - 0.05, t)); };
+    cv.addEventListener('pointerdown', (e) => {
+      if (d.idx < 0 || d.locked || !dur()) return;
+      const r = cv.getBoundingClientRect();
+      drag = { x: e.clientX, t: d.audio.currentTime, ov: e.clientY - r.top >= r.height - 14 };
+      try { cv.setPointerCapture(e.pointerId); } catch {}
+      if (drag.ov) seek((e.clientX - r.left) / r.width * dur());
+    });
+    cv.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const r = cv.getBoundingClientRect();
+      if (drag.ov) seek((e.clientX - r.left) / r.width * dur());
+      else seek(drag.t - (e.clientX - drag.x) / PPS);
+    });
+    const end = () => { drag = null; };
+    cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  });
+
   // isang column: tatlong magkapatong na bar (pula = bass, berde = mid, asul = high); nagsasama sa puti kapag sabay-sabay
   function col(g, x, mid, v) {
     const hh = Math.min(1, v) * (mid - 1);
     if (hh > 0.4) g.fillRect(x, mid - hh, 1, hh * 2);
   }
-  function bars(g, x, mid, l, m, h) {
-    g.fillStyle = '#ff2f3d'; col(g, x, mid, l);
-    g.fillStyle = '#35e66f'; col(g, x, mid, m);
-    g.fillStyle = '#2f8cff'; col(g, x, mid, h);
+  // KULAY NG SPECTRUM = kulay ng deck: bass = mas madilim, mid = mismong kulay, high = mas maliwanag (nagsasama sa mas maliwanag kapag sabay-sabay)
+  function mkPal(c) {
+    let m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(c) || (/^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(c) || []).slice(0, 4).map((v, i) => (i && v ? v + v : v));
+    if (!m || m.length < 4 || !m[1]) return [c, c, c];
+    const r = parseInt(m[1], 16), g = parseInt(m[2], 16), b = parseInt(m[3], 16);
+    const mix = (k, t) => 'rgb(' + [r, g, b].map((v) => Math.round(v * (1 - t) + k * t)).join(',') + ')';
+    return [mix(0, 0.45), mix(0, 0), mix(255, 0.5)];
+  }
+  specs.forEach((sp) => { sp.pal = mkPal(sp.color); });
+  function bars(g, x, mid, l, m, h, pal) {
+    g.fillStyle = pal[0]; col(g, x, mid, l);
+    g.fillStyle = pal[1]; col(g, x, mid, m);
+    g.fillStyle = pal[2]; col(g, x, mid, h);
   }
 
-  function drawZoom(g, w, hz, wf, t) {
+  function drawZoom(g, w, hz, wf, t, pal) {
     const mid = hz / 2, half = w / 2;
     g.globalCompositeOperation = 'lighter';
     for (let x = 0; x < w; x++) {
@@ -1151,7 +1349,7 @@ document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key ==
       for (let b = Math.max(b0, 0), e = Math.min(b1, wf.bins - 1); b <= e; b++) {
         if (wf.L[b] > l) l = wf.L[b]; if (wf.M[b] > m) m = wf.M[b]; if (wf.H[b] > h) h = wf.H[b];
       }
-      bars(g, x, mid, l * 1.1, m * 1.8, h * 3.4);
+      bars(g, x, mid, l * 1.1, m * 1.8, h * 3.4, pal);
     }
     g.globalCompositeOperation = 'source-over';
     g.fillStyle = 'rgba(8,9,12,.4)';                 // natugtog na bahagi = mas madilim
@@ -1179,7 +1377,7 @@ document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key ==
     g.globalCompositeOperation = 'lighter';
     for (let x = 0; x <= half; x++) {
       const v = sp.hist[sp.hist.length - 1 - (half - x)];
-      if (v) bars(g, x, mid, v[0], v[1], v[2] * 1.2);
+      if (v) bars(g, x, mid, v[0], v[1], v[2] * 1.2, sp.pal);
     }
     g.globalCompositeOperation = 'source-over';
   }
@@ -1198,7 +1396,7 @@ document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key ==
       const t = d.audio.currentTime || 0, dur = isFinite(d.audio.duration) ? d.audio.duration : 0;
       const wf = d.wfState === 'ready' ? d.wf : null;
       g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(0, mid, w, 1);          // gitnang linya
-      if (wf) drawZoom(g, w, hz, wf, t);
+      if (wf) drawZoom(g, w, hz, wf, t, sp.pal);
       else if (d.idx >= 0) drawLive(sp, g, w, hz, nowMs);
       if (d.idx >= 0) {                                                          // playhead
         g.save(); g.shadowColor = sp.color; g.shadowBlur = 6;
