@@ -22,7 +22,7 @@ h1{font-size:15px;letter-spacing:3px;text-align:center;margin:6px 0 14px;font-we
 .sheethead b{font-size:14px}
 #closeSettings,#closeMix{flex:none;width:42px;height:42px;border-radius:50%;font-size:18px}
 .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px;box-shadow:0 6px 24px #0008}
-.decks{display:grid;grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr);gap:5px;margin-bottom:12px}
+.decks{display:grid;grid-template-columns:minmax(0,1fr) 34px minmax(0,1fr);gap:5px;margin-bottom:12px}
 .decks .card{margin:0}
 #deck0{--c:var(--c1)}#deck1{--c:var(--c2)}
 .deck{border-top:3px solid var(--c)}
@@ -36,7 +36,7 @@ button.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 
 .deck button.on{background:var(--c);border-color:var(--c);color:#06060c;box-shadow:0 0 14px var(--c)}
 .addrow{display:grid;grid-template-columns:1fr;gap:5px;margin-top:6px}
 .addrow button{height:38px;background:transparent;border-style:dashed}
-.deck.locked .btns button:not(.lockbtn),.deck.locked .addrow,.deck.locked ul{opacity:.4;pointer-events:none}
+.deck.locked .btns button:not(.lockbtn),.deck.locked .addrow,.deck.locked ul,.deck.locked input[type=range]{opacity:.4;pointer-events:none}
 ul{list-style:none;margin:8px 0 0;padding:0;max-height:150px;overflow:auto;font-size:12.5px}
 li{padding:8px;border-radius:9px;margin-bottom:3px;background:#0f0f19;color:#ececf8;word-break:break-word}
 li.cur{background:#26264a;color:#fff;border-left:3px solid var(--c)}
@@ -58,8 +58,6 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 #duckBtn,#micBtn,#monBtn,#micMonBtn{height:60px;font-size:10.5px;line-height:1.2;white-space:pre-line;padding:0 2px;min-width:0}
 #micMonBtn.on{background:var(--acc);border-color:var(--acc);color:#fff}
 #micBtn.on{background:var(--ok);border-color:var(--ok);color:#04130a;box-shadow:0 0 16px #22c55e88}
-.meter{height:14px;background:#0b0b14;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:14px}
-.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok),#e5c82d 70%,var(--live))}
 ::placeholder{color:#9a9ab8;opacity:1}
 input[type=text],input[type=password],input[type=number],select{width:100%;padding:12px;border-radius:12px;border:1px solid #33334f;background:#0c0c16;color:var(--txt);font-size:14px}
 input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px #8b5cf655}
@@ -102,14 +100,15 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
   .hint{font-size:11px}
 }
 @media (max-width:340px){h1{font-size:12px;letter-spacing:1px}#duckBtn,#micBtn,#monBtn,#micMonBtn,#liveBtn{font-size:9.5px}}
-.card.vgain{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;padding:10px 2px}
-.vcol{display:flex;flex-direction:column;align-items:center;gap:6px;width:48px}
-.vl{font-size:10px;font-weight:700;line-height:1.2;color:#d9d9f0;text-transform:uppercase;text-align:center}
-.vslot{height:22px;display:flex;align-items:center;justify-content:center}
-.vslide{position:relative;width:40px;height:210px}
-.vslide input{position:absolute;left:50%;top:50%;width:210px;margin:0;transform:translate(-50%,-50%) rotate(-90deg)}
-.vslide input.vcross{transform:translate(-50%,-50%) rotate(90deg)}   /* 0 = Deck 1 (taas), 100 = Deck 2 (baba) */
-.vdb{font-size:10px;color:var(--txt);font-variant-numeric:tabular-nums;white-space:nowrap}
+/* LEVEL METER sa gitna ng dalawang deck (patayo) */
+.card.vmeter{display:flex;flex-direction:column;align-items:center;gap:6px;padding:8px 0}
+.vl{font-size:9px;font-weight:700;line-height:1.2;color:#d9d9f0;text-transform:uppercase;text-align:center;letter-spacing:.5px}
+.vm{position:relative;flex:1;width:14px;min-height:120px;border:1px solid var(--line);border-radius:99px;overflow:hidden;background:linear-gradient(0deg,var(--ok),#e5c82d 70%,var(--live))}
+.vm i{position:absolute;top:0;left:0;right:0;height:100%;background:#0b0b14}
+/* Tracks Gain at Crossfader sa ilalim ng mga deck */
+.xrow{display:flex;align-items:center;gap:10px}
+.xrow input{flex:1;min-width:0}
+.xrow .vtag{flex:none}
 .vtag{width:22px;height:22px;border-radius:50%;font-style:normal;font-size:11px;font-weight:800;color:#06060c;display:flex;align-items:center;justify-content:center}
 .mqw{flex:1;min-width:0;overflow:hidden;white-space:nowrap}
 .mq{display:inline-block;will-change:transform}
@@ -118,6 +117,87 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
 @media (prefers-reduced-motion:reduce){.mq.run{animation:none}}
 #liveBtn{flex:1.4;width:auto;height:60px;font-size:11.5px;letter-spacing:.3px;line-height:1.2;white-space:pre-line;padding:0 2px;border-radius:12px;min-width:0}
 #status{margin-top:8px}
+</style>
+<style>
+/* ===== REALISTIC HARDWARE MIXER STYLE (override; CSS lang, walang binago sa takbo ng app) ===== */
+:root{--edge:#43464f}
+html{background:#0b0b0e}
+body{background:radial-gradient(120% 40% at 50% -5%,#2c2e36 0%,transparent 70%),repeating-linear-gradient(90deg,#ffffff05 0 1px,transparent 1px 3px),#0e0f12}
+h1{background:linear-gradient(180deg,#f4f5f8,#8a8e99);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 1px 0 #000)}
+
+/* PANELS: brushed metal */
+.card,.card:has(#liveBtn){background:repeating-linear-gradient(90deg,#ffffff07 0 1px,transparent 1px 3px),linear-gradient(180deg,#34363e,#1c1d22);border:1px solid var(--edge);border-radius:10px;box-shadow:inset 0 1px 0 #ffffff22,inset 0 -2px 8px #0009,0 8px 18px #000b}
+.card:has(#liveBtn){box-shadow:inset 0 1px 0 #ffffff22,inset 0 -2px 8px #0009,0 -10px 30px #000d}
+.card.deck{border-top:3px solid var(--c)}
+.deck h2{text-shadow:0 0 8px var(--c)}
+.sheet,#xfCard,#fxCard,#mixCtl{position:relative}
+.sheet::before,#micCard::before,#fxCard::before,#mixCtl::before,#xfCard::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:
+  radial-gradient(circle at 6px 6px,#a0a3ae 0 1.4px,#23252b 2.4px,transparent 3px),
+  radial-gradient(circle at calc(100% - 6px) 6px,#a0a3ae 0 1.4px,#23252b 2.4px,transparent 3px),
+  radial-gradient(circle at 6px calc(100% - 6px),#a0a3ae 0 1.4px,#23252b 2.4px,transparent 3px),
+  radial-gradient(circle at calc(100% - 6px) calc(100% - 6px),#a0a3ae 0 1.4px,#23252b 2.4px,transparent 3px)}
+
+/* SILKSCREEN LABELS */
+label,.vl{color:#aeb3bf;text-shadow:0 -1px 0 #000}
+label b{color:#e8eaf0}
+
+/* LCD DISPLAYS */
+.now{font-family:ui-monospace,"Courier New",monospace;color:var(--c);text-shadow:0 0 6px var(--c);background:linear-gradient(180deg,#02080a,#08161a);border:1px solid #000;border-left:3px solid var(--c);border-radius:4px;box-shadow:inset 0 3px 8px #000,0 1px 0 #ffffff1f}
+.time{font-family:ui-monospace,"Courier New",monospace;color:var(--c);opacity:.85;text-shadow:0 0 5px var(--c)}
+#status{font-family:ui-monospace,"Courier New",monospace;margin-top:10px;padding:6px;background:linear-gradient(180deg,#0b0803,#1a1204);border:1px solid #000;border-radius:4px;color:#ffb347;text-shadow:0 0 6px #ff9a1f;box-shadow:inset 0 3px 8px #000,0 1px 0 #ffffff1a}
+#status.live{color:#ff5a6e;text-shadow:0 0 8px #ff2b45}
+.spec{background:linear-gradient(180deg,#02060a,#071016);border:1px solid #000;border-radius:4px;box-shadow:inset 0 3px 8px #000,0 1px 0 #ffffff1a}
+
+/* PUSH BUTTONS */
+button:not(.pad){background:linear-gradient(180deg,#52555f,#34363d 50%,#27292f);color:#e8eaf0;border:1px solid #0a0a0d;border-bottom:3px solid #07070a;border-radius:7px;text-shadow:0 -1px 0 #000a;box-shadow:inset 0 1px 0 #ffffff40,0 2px 4px #0009}
+button:not(.pad):active{transform:translateY(2px);border-bottom-width:1px;background:linear-gradient(180deg,#2a2c32,#3a3d44);box-shadow:inset 0 2px 5px #000a}
+button.on:not(.pad){background:linear-gradient(180deg,#ffffff55,#ffffff00 55%),var(--acc);border-color:#000;color:#fff;text-shadow:0 1px 0 #0006;box-shadow:inset 0 1px 0 #fff8,0 0 14px var(--acc)}
+.deck button.on:not(.pad){background:linear-gradient(180deg,#ffffff66,#ffffff00 55%),var(--c);color:#06060c;text-shadow:none;box-shadow:inset 0 1px 0 #fff9,0 0 14px var(--c)}
+#micBtn.on{background:linear-gradient(180deg,#ffffff55,#ffffff00 55%),var(--ok);color:#04130a;text-shadow:none;box-shadow:inset 0 1px 0 #fff8,0 0 16px #22c55e99}
+#micMonBtn.on{background:linear-gradient(180deg,#ffffff55,#ffffff00 55%),var(--acc);color:#fff;box-shadow:inset 0 1px 0 #fff8,0 0 14px var(--acc)}
+#gearBtn,#mixBtn,#closeSettings,#closeMix{background:radial-gradient(circle at 35% 28%,#8a8d98,#3a3d45 55%,#1f2025);border:2px solid #0a0a0d;box-shadow:inset 0 1px 0 #fff5,0 3px 6px #000a}
+#liveBtn{border:2px solid #2b0a10;border-bottom-width:4px;border-radius:10px;background:linear-gradient(180deg,#ff6a6a,#d3162d 55%,#a50e22);color:#fff;text-shadow:0 -1px 0 #0006;box-shadow:inset 0 1px 0 #ffffff66,0 0 14px #ff335577,0 4px 8px #000a}
+#liveBtn:active{border-bottom-width:2px}
+#liveBtn.live{background:linear-gradient(180deg,#ff8a8a,#ff2b45 55%,#c4122b)}
+#mixSec{height:auto}
+
+/* FADERS: dark slot + ribbed cap na may puting linya */
+input[type=range]{height:8px;border:1px solid #000;box-shadow:inset 0 2px 4px #000,0 1px 0 #ffffff1a;background:linear-gradient(90deg,var(--cc) var(--v),#08080b var(--v))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:32px;border-radius:3px;border:1px solid #000;
+  background:linear-gradient(#f2f2f2,#f2f2f2) center/2px 100% no-repeat,repeating-linear-gradient(90deg,#0000003a 0 2px,transparent 2px 4px),linear-gradient(90deg,#2a2c32,#6a6d77 50%,#2a2c32);
+  box-shadow:0 4px 7px #000c,inset 0 1px 0 #ffffff55}
+#cross{background:linear-gradient(#cfd2da,#cfd2da) center/2px 100% no-repeat,linear-gradient(90deg,var(--c1) 0 8px,#08080b 8px calc(100% - 8px),var(--c2) calc(100% - 8px) 100%)}
+#cross::-webkit-slider-thumb{border-color:#000;
+  background:linear-gradient(#f2f2f2,#f2f2f2) center/2px 100% no-repeat,repeating-linear-gradient(90deg,#0000003a 0 2px,transparent 2px 4px),linear-gradient(90deg,#2a2c32,#6a6d77 50%,#2a2c32)}
+
+/* FIELDS */
+input[type=text],input[type=password],input[type=number],select{background:linear-gradient(180deg,#07070a,#111217);border:1px solid #000;border-radius:6px;box-shadow:inset 0 2px 5px #000,0 1px 0 #ffffff1a;color:#e6e8ee}
+
+/* TRACK LIST */
+li{background:linear-gradient(180deg,#0a0b0e,#111217);border:1px solid #000;border-radius:5px;box-shadow:inset 0 1px 3px #000}
+li.cur{background:linear-gradient(180deg,#16262b,#0d171a);color:var(--c);text-shadow:0 0 6px var(--c)}
+
+/* LED SEGMENT LEVEL METER */
+.vm{width:16px;border:1px solid #000;border-radius:4px;box-shadow:inset 0 0 4px #000a,0 1px 0 #ffffff22}
+.vm i{background:rgba(5,5,8,.82)}
+.vm::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 5px,#050508 5px 7px)}
+
+/* EFFECT PADS: bezel sa paligid (bilog pa rin) */
+.pad{box-shadow:inset 0 -6px 9px #0004,inset 0 4px 6px #fff5,0 3px 9px #0009,0 0 0 2px #0b0b0e,0 0 0 3px #43464f}
+.pad.empty{box-shadow:0 0 0 2px #0b0b0e,0 0 0 3px #43464f}
+
+/* FIT SA CELLPHONE */
+#duckBtn,#micBtn,#monBtn,#micMonBtn{letter-spacing:0}
+#duckBtn{font-size:9px}
+.cap:empty{display:none}                 /* walang caption = walang sayang na espasyo */
+.fxgrid{row-gap:8px}
+input[type=range]::-webkit-slider-thumb{width:22px;height:34px}   /* mas madaling hawakan ng daliri */
+@media (max-width:420px){
+  .spec{height:46px;margin:6px 0 0}
+  .now{min-height:36px}
+  .card.vmeter{padding:6px 0}
+}
+@media (max-width:340px){#duckBtn{font-size:8.5px}}
 </style>
 </head>
 <body>
@@ -157,7 +237,9 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
 <div class="modal" id="mixSettings" hidden>
 <div class="card sheet" role="dialog" aria-label="Audio Settings">
   <div class="sheethead"><b>Audio Settings</b><button id="closeMix" aria-label="Close audio settings">✕</button></div>
-  <label style="margin-top:14px">Effects Volume: <b id="fxv">100%</b></label>
+  <label style="margin-top:14px">Tracks Gain: <b id="tgdb">0.0 dB</b></label>
+  <input type="range" min="0" max="150" value="100" id="tracksGain" aria-label="Tracks Gain">
+  <label>Effects Volume: <b id="fxv">100%</b></label>
   <input type="range" min="0" max="150" value="100" id="fxVol">
   <label>Microphone Gain: <b id="mgdb">0.0 dB</b></label>
   <input type="range" min="0" max="200" value="100" id="micGain">
@@ -177,6 +259,13 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
   </select>
   <label>Music level while speaking: <b id="duckv">25%</b></label>
   <input type="range" min="0" max="100" value="25" id="duckLvl">
+  <label for="mixSec">Auto-mix crossfade</label>
+  <select id="mixSec">
+    <option value="3">Crossfade 3s</option>
+    <option value="5" selected>Crossfade 5s</option>
+    <option value="8">Crossfade 8s</option>
+    <option value="12">Crossfade 12s</option>
+  </select>
   <button id="closeMix2" style="width:100%;height:50px;margin-top:16px;background:var(--acc);border-color:var(--acc);color:#fff;font-size:13.5px">Done</button>
 </div>
 </div>
@@ -195,19 +284,9 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
     <ul id="list0"></ul>
     <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac" multiple hidden id="file0">
   </div>
-  <div class="card vgain">
-    <div class="vcol">
-      <span class="vl">Tracks<br>Gain</span>
-      <span class="vslot"></span>
-      <div class="vslide"><input type="range" min="0" max="150" value="100" id="tracksGain" aria-label="Tracks Gain"></div>
-      <span class="vslot"><b id="tgdb" class="vdb">0.0 dB</b></span>
-    </div>
-    <div class="vcol">
-      <span class="vl">Cross<br>fader</span>
-      <span class="vslot"><i class="vtag" style="background:var(--c1)">1</i></span>
-      <div class="vslide"><input type="range" min="0" max="100" value="50" id="cross" class="vcross" aria-label="Crossfader: Deck 1 (top) to Deck 2 (bottom)"></div>
-      <span class="vslot"><i class="vtag" style="background:var(--c2)">2</i></span>
-    </div>
+  <div class="card vmeter" aria-label="Output level">
+    <span class="vl">Level</span>
+    <div class="vm"><i id="meter"></i></div>
   </div>
   <div class="card deck" id="deck1">
     <h2>DECK 2</h2>
@@ -224,17 +303,18 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
   </div>
 </div>
 
-<div class="meter" style="margin:0 0 12px"><i id="meter"></i></div>
+<div class="card" id="mixCtl">
+  <label style="margin-top:0">Crossfader</label>
+  <div class="xrow">
+    <i class="vtag" style="background:var(--c1)">1</i>
+    <input type="range" min="0" max="100" value="50" id="cross" aria-label="Crossfader: Deck 1 (left) to Deck 2 (right)">
+    <i class="vtag" style="background:var(--c2)">2</i>
+  </div>
+</div>
 
 <div class="card" id="xfCard">
   <div class="row" style="margin-top:0">
     <button id="autoBtn">🔀 AUTO-MIX: OFF</button>
-    <select id="mixSec">
-      <option value="3">Crossfade 3s</option>
-      <option value="5" selected>Crossfade 5s</option>
-      <option value="8">Crossfade 8s</option>
-      <option value="12">Crossfade 12s</option>
-    </select>
   </div>
 </div>
 
@@ -388,6 +468,7 @@ function load(d, k) {
   if (d.url) URL.revokeObjectURL(d.url);
   d.url = URL.createObjectURL(d.list[k]);
   d.audio.src = d.url;
+  if (window.wfAnalyze) wfAnalyze(d);
   mqSet($('#now' + d.i), d.list[k].name.replace(/\.[^.]+$/, ''));
   renderList(d);
 }
@@ -395,6 +476,7 @@ function clearDeck(d) {
   d.audio.pause(); d.audio.removeAttribute('src'); d.audio.load();
   if (d.url) { URL.revokeObjectURL(d.url); d.url = null; }
   d.idx = -1; d.orphan = false;
+  d.wfTok = (d.wfTok || 0) + 1; d.wf = null; d.wfState = 'none';
   mqSet($('#now' + d.i), 'No track');
   $('#time' + d.i).textContent = '0:00 / 0:00';
   updatePlayBtn(d);
@@ -463,7 +545,15 @@ decks.forEach((d) => {
   d.audio.addEventListener('pause', () => updatePlayBtn(d));
 });
 
-$('#cross').oninput = applyCross;
+let crossSnapped = false;
+$('#cross').oninput = (e) => {          // CENTER LOCK: kapag malapit sa gitna (±4), dumidikit sa 50 na parang hardware detent
+  const el = e.target, v = parseFloat(el.value);
+  if (Math.abs(v - 50) <= 4) {
+    el.value = 50;
+    if (!crossSnapped) { crossSnapped = true; try { navigator.vibrate && navigator.vibrate(10); } catch {} }
+  } else crossSnapped = false;
+  applyCross();
+};
 applyCross();
 const dbText = (v) => (v <= 0 ? '-∞ dB' : (20 * Math.log10(v)).toFixed(1) + ' dB');
 $('#tracksGain').oninput = (e) => { const v = e.target.value / 100; tracksGain.gain.value = v; $('#tgdb').textContent = dbText(v); };
@@ -533,6 +623,7 @@ async function toggleMic() {
     micStream.getTracks().forEach((t) => t.stop());
     micSrc.disconnect(); micStream = null; micSrc = null;
     btn.textContent = '🎤\nMIC\nOFF'; btn.classList.remove('on');
+    micMonLabel();
     return;
   }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -754,7 +845,7 @@ const buf = new Uint8Array(analyser.fftSize);
   analyser.getByteTimeDomainData(buf);
   let peak = 0;
   for (const v of buf) peak = Math.max(peak, Math.abs(v - 128));
-  $('#meter').style.width = Math.min(100, (peak / 128) * 100) + '%';
+  $('#meter').style.height = (100 - Math.min(100, (peak / 128) * 100)) + '%';   // tinatakpan ng maitim na bahagi mula sa taas
   requestAnimationFrame(loop);
 })();
 
@@ -878,6 +969,8 @@ try {
 });
 saveCfg();
 $('#liveBtn').onclick = goLive;
+// Kapag na-suspend ang audio (tawag, background) habang live, subukang ibalik agad para hindi tahimik na mamatay ang stream
+ctx.onstatechange = () => { if (ws && ctx.state !== 'running') ctx.resume().catch(() => {}); };
 window.addEventListener('beforeunload', (e) => { if (ws) { e.preventDefault(); e.returnValue = ''; } });
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible' && ws && navigator.wakeLock && !wake)
@@ -890,40 +983,164 @@ function f(){r.forEach(e=>{const p=(e.value-e.min)/(e.max-e.min)*100;e.style.set
 setInterval(f,100);f();})();
 </script>
 <script>
-// SPECTRUM ng Deck 1 at Deck 2 (kinukuha pagkatapos ng volume/crossfader ng bawat deck, bago ang Tracks Gain, ducking at limiter)
+// WAVEFORM ng Deck 1 at Deck 2 (estilong Virtual DJ): kulay ayon sa bass/mid/high, may playhead sa gitna, at overview ng buong kanta
 (function () {
-  const N = 28, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const BPS = 100;                 // bins kada segundo sa pre-analysis
+  const PPS = 34;                  // pixel kada segundo sa zoomed waveform
+  const OV = 240;                  // bilang ng column ng overview
+  const OV_H = 8;                  // taas ng overview strip
+  const WF_MAX = 8 * 1048576;      // mas malaking file = live waveform na lang (iwas ubos ng memory sa phone)
+
+  // PRE-ANALYSIS: binabasa ang buong kanta nang isang beses at kinukuha ang laki ng bass/mid/high bawat 10ms
+  window.wfAnalyze = async function (d) {
+    const tok = d.wfTok = (d.wfTok || 0) + 1, file = d.list[d.idx];
+    d.wf = null; d.wfState = 'busy';
+    if (!file) { d.wfState = 'none'; return; }
+    if (file.size > WF_MAX) { d.wfState = 'live'; return; }
+    try {
+      const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+      if (tok !== d.wfTok) return;
+      const ch0 = buf.getChannelData(0), ch1 = buf.numberOfChannels > 1 ? buf.getChannelData(1) : ch0;
+      const sr = buf.sampleRate, n = buf.length, spb = Math.max(1, Math.round(sr / BPS)), bins = Math.ceil(n / spb);
+      const L = new Float32Array(bins), M = new Float32Array(bins), H = new Float32Array(bins);
+      const a1 = 1 - Math.exp(-2 * Math.PI * 200 / sr), a2 = 1 - Math.exp(-2 * Math.PI * 2500 / sr);
+      let lp1 = 0, lp2 = 0;
+      const CH = spb * 200;        // ~2 segundo ng tunog bawat hiwa, may pahinga sa pagitan para hindi maputol ang live encoder
+      for (let s = 0; s < n; s += CH) {
+        const e = Math.min(n, s + CH);
+        for (let b = (s / spb) | 0, i = s; i < e; b++) {
+          const be = Math.min(e, i + spb);
+          let pl = 0, pm = 0, ph = 0;
+          for (; i < be; i++) {
+            const x = (ch0[i] + ch1[i]) * 0.5;
+            lp1 += a1 * (x - lp1); lp2 += a2 * (x - lp2);
+            const l = Math.abs(lp1), m = Math.abs(lp2 - lp1), h = Math.abs(x - lp2);
+            if (l > pl) pl = l; if (m > pm) pm = m; if (h > ph) ph = h;
+          }
+          L[b] = pl; M[b] = pm; H[b] = ph;
+        }
+        await new Promise((r) => setTimeout(r, 0));
+        if (tok !== d.wfTok) return;
+      }
+      let g = 1e-6;
+      for (let b = 0; b < bins; b++) { const t = L[b] + M[b] + H[b]; if (t > g) g = t; }
+      const sc = 1 / g;
+      for (let b = 0; b < bins; b++) { L[b] *= sc; M[b] *= sc; H[b] *= sc; }
+      const ov = new Float32Array(OV);
+      for (let c = 0; c < OV; c++) {
+        const b0 = Math.floor(c * bins / OV), b1 = Math.max(b0 + 1, Math.floor((c + 1) * bins / OV));
+        let mx = 0;
+        for (let b = b0; b < b1 && b < bins; b++) { const t = L[b] + M[b] + H[b]; if (t > mx) mx = t; }
+        ov[c] = mx;
+      }
+      d.wf = { L, M, H, bins, ov };
+      d.wfState = 'ready';
+    } catch (err) { if (tok === d.wfTok) d.wfState = 'live'; }
+  };
+
   const specs = decks.map((d) => {
     const an = ctx.createAnalyser();
-    an.fftSize = 256; an.smoothingTimeConstant = 0.75;
+    an.fftSize = 256; an.smoothingTimeConstant = 0.6;
     d.cross.connect(an);
     const root = document.getElementById('deck' + d.i);
     const cv = document.createElement('canvas');
     cv.className = 'spec';
     root.querySelector('.time').after(cv);
-    return { an, cv, g: cv.getContext('2d'), data: new Uint8Array(an.frequencyBinCount), peaks: new Array(N).fill(0),
+    return { d, an, cv, g: cv.getContext('2d'), data: new Uint8Array(an.frequencyBinCount), hist: [], last: 0,
              color: getComputedStyle(root).getPropertyValue('--c').trim() || '#22d3ee' };
   });
-  function draw() {
+
+  // isang column: tatlong magkapatong na bar (pula = bass, berde = mid, asul = high); nagsasama sa puti kapag sabay-sabay
+  function col(g, x, mid, v) {
+    const hh = Math.min(1, v) * (mid - 1);
+    if (hh > 0.4) g.fillRect(x, mid - hh, 1, hh * 2);
+  }
+  function bars(g, x, mid, l, m, h) {
+    g.fillStyle = '#ff2f3d'; col(g, x, mid, l);
+    g.fillStyle = '#35e66f'; col(g, x, mid, m);
+    g.fillStyle = '#2f8cff'; col(g, x, mid, h);
+  }
+
+  function drawZoom(g, w, hz, wf, t) {
+    const mid = hz / 2, half = w / 2;
+    g.globalCompositeOperation = 'lighter';
+    for (let x = 0; x < w; x++) {
+      const t0 = t + (x - half) / PPS;
+      const b0 = Math.floor(t0 * BPS), b1 = Math.max(b0, Math.floor((t0 + 1 / PPS) * BPS));
+      if (b1 < 0 || b0 >= wf.bins) continue;
+      let l = 0, m = 0, h = 0;
+      for (let b = Math.max(b0, 0), e = Math.min(b1, wf.bins - 1); b <= e; b++) {
+        if (wf.L[b] > l) l = wf.L[b]; if (wf.M[b] > m) m = wf.M[b]; if (wf.H[b] > h) h = wf.H[b];
+      }
+      bars(g, x, mid, l * 1.1, m * 1.8, h * 3.4);
+    }
+    g.globalCompositeOperation = 'source-over';
+    g.fillStyle = 'rgba(8,9,12,.4)';                 // natugtog na bahagi = mas madilim
+    g.fillRect(0, 0, half, hz);
+    g.fillStyle = 'rgba(255,255,255,.16)';           // tick bawat segundo
+    for (let s = Math.ceil(t - half / PPS); s <= t + half / PPS; s++) {
+      const x = Math.round(half + (s - t) * PPS);
+      g.fillRect(x, 0, 1, 4); g.fillRect(x, hz - 4, 1, 4);
+    }
+  }
+
+  function drawLive(sp, g, w, hz, nowMs) {
+    const d = sp.d, mid = hz / 2, half = Math.floor(w / 2);
+    if (!d.audio.paused && nowMs - sp.last >= 33) {
+      sp.last = nowMs;
+      sp.an.getByteFrequencyData(sp.data);
+      const a = sp.data;
+      let l = 0, m = 0, h = 0;
+      for (let k = 0; k < 3; k++) l += a[k];
+      for (let k = 3; k < 24; k++) m += a[k];
+      for (let k = 24; k < 81; k++) h += a[k];
+      sp.hist.push([l / 3 / 255, m / 21 / 255, h / 57 / 255]);
+      if (sp.hist.length > 600) sp.hist.splice(0, sp.hist.length - 600);
+    }
+    g.globalCompositeOperation = 'lighter';
+    for (let x = 0; x <= half; x++) {
+      const v = sp.hist[sp.hist.length - 1 - (half - x)];
+      if (v) bars(g, x, mid, v[0], v[1], v[2] * 1.2);
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+
+  function draw(now) {
     requestAnimationFrame(draw);
     if (document.hidden) return;
+    const nowMs = now || performance.now();
     for (const sp of specs) {
-      const w = sp.cv.clientWidth, h = sp.cv.clientHeight;
-      if (sp.cv.width !== Math.round(w * dpr)) { sp.cv.width = Math.round(w * dpr); sp.cv.height = Math.round(h * dpr); }
+      const d = sp.d, cv = sp.cv;
+      const w = cv.clientWidth, h = cv.clientHeight;
+      if (!w || !h) continue;
+      if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
       const g = sp.g; g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
-      sp.an.getByteFrequencyData(sp.data);
-      const bw = w / N, gap = Math.max(1.5, bw * 0.22);
-      const grad = g.createLinearGradient(0, h, 0, 0);
-      grad.addColorStop(0, sp.color + '55'); grad.addColorStop(1, sp.color);
-      for (let i = 0; i < N; i++) {
-        const lo = Math.floor(Math.pow(i / N, 1.7) * 100) + 1;
-        const hi = Math.max(lo + 1, Math.floor(Math.pow((i + 1) / N, 1.7) * 100) + 1);
-        let sum = 0; for (let k = lo; k < hi; k++) sum += sp.data[k];
-        const v = Math.min(1, (sum / (hi - lo) / 255) * 1.25);
-        const bh = Math.max(2, v * (h - 4));
-        g.fillStyle = grad; g.fillRect(i * bw + gap / 2, h - bh, bw - gap, bh);
-        sp.peaks[i] = Math.max(v, sp.peaks[i] - 0.012);
-        g.fillStyle = '#fff'; g.fillRect(i * bw + gap / 2, h - sp.peaks[i] * (h - 4) - 3, bw - gap, 2);
+      const hz = h - OV_H - 3, mid = hz / 2, half = w / 2;
+      const t = d.audio.currentTime || 0, dur = isFinite(d.audio.duration) ? d.audio.duration : 0;
+      const wf = d.wfState === 'ready' ? d.wf : null;
+      g.fillStyle = 'rgba(255,255,255,.14)'; g.fillRect(0, mid, w, 1);          // gitnang linya
+      if (wf) drawZoom(g, w, hz, wf, t);
+      else if (d.idx >= 0) drawLive(sp, g, w, hz, nowMs);
+      if (d.idx >= 0) {                                                          // playhead
+        g.save(); g.shadowColor = sp.color; g.shadowBlur = 6;
+        g.fillStyle = '#fff'; g.fillRect(half - 0.75, 0, 1.5, hz); g.restore();
+      }
+      // OVERVIEW ng buong kanta
+      const y0 = h - OV_H, prog = dur ? Math.min(1, t / dur) : 0;
+      g.fillStyle = 'rgba(255,255,255,.07)'; g.fillRect(0, y0, w, OV_H);
+      if (wf) {
+        for (let x = 0; x < w; x++) {
+          const v = wf.ov[Math.min(OV - 1, (x / w * OV) | 0)], bh = Math.max(1, v * OV_H);
+          g.fillStyle = x / w <= prog ? sp.color : '#7b7f8b';
+          g.fillRect(x, y0 + (OV_H - bh) / 2, 1, bh);
+        }
+      } else if (d.idx >= 0) {
+        g.fillStyle = sp.color; g.fillRect(0, y0 + OV_H / 2 - 1, w * prog, 2);
+      }
+      if (d.idx >= 0) { g.fillStyle = '#fff'; g.fillRect(Math.min(w - 2, Math.max(0, prog * w - 1)), y0 - 1, 2, OV_H + 2); }
+      if (d.wfState === 'busy' && d.idx >= 0) {
+        g.font = '9px ui-monospace,monospace'; g.fillStyle = 'rgba(255,255,255,.6)'; g.fillText('ANALYZING…', 6, 12);
       }
     }
   }
