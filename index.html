@@ -330,11 +330,39 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
     <option value="2" selected>Medium</option>
     <option value="3">High (strong)</option>
   </select>
+  <label for="voicePreset">Voice Preset</label>
+  <select id="voicePreset">
+    <option value="">Custom (my own settings)</option>
+    <option value="warm">Radio Warm</option>
+    <option value="bright">Clear / Bright</option>
+    <option value="deep">Deep</option>
+  </select>
+  <label>Mic EQ Low (bass): <b id="mqv0">0.0 dB</b></label>
+  <input type="range" min="-12" max="12" step="0.5" value="0" id="mq0">
+  <label>Mic EQ Mid (voice): <b id="mqv1">0.0 dB</b></label>
+  <input type="range" min="-12" max="12" step="0.5" value="0" id="mq1">
+  <label>Mic EQ High (treble): <b id="mqv2">0.0 dB</b></label>
+  <input type="range" min="-12" max="12" step="0.5" value="0" id="mq2">
+  <button id="mqReset" style="width:100%;height:40px;margin-top:10px;font-size:12px">Reset Mic EQ</button>
   <label for="micEnh">Mic Enhancer (voice clarity)</label>
   <select id="micEnh">
     <option value="0">Off</option>
     <option value="1">Light</option>
     <option value="2" selected>Medium</option>
+    <option value="3">Strong</option>
+  </select>
+  <label for="deEss">De-esser (softens harsh "S")</label>
+  <select id="deEss">
+    <option value="0">Off</option>
+    <option value="1" selected>Light</option>
+    <option value="2">Medium</option>
+    <option value="3">Strong</option>
+  </select>
+  <label for="carveLvl">Music carve (clearer voice over music)</label>
+  <select id="carveLvl">
+    <option value="0">Off</option>
+    <option value="1" selected>Light</option>
+    <option value="2">Medium</option>
     <option value="3">Strong</option>
   </select>
   <label>Mic monitor in phone: <b id="mmv">35%</b></label>
@@ -468,7 +496,8 @@ const limiter = ctx.createDynamicsCompressor();   // proteksyon laban sa clippin
 limiter.threshold.value = -3; limiter.knee.value = 0; limiter.ratio.value = 20;
 limiter.attack.value = 0.003; limiter.release.value = 0.25;
 
-tracksGain.connect(duckGain);
+const carve = ctx.createBiquadFilter(); carve.type = 'peaking'; carve.frequency.value = 2500; carve.Q.value = 0.9; carve.gain.value = 0;   // MUSIC CARVE: binabawasan ang gitna ng kanta habang nagsasalita ka
+tracksGain.connect(carve); carve.connect(duckGain);
 duckGain.connect(master);
 micGain.connect(master);
 master.connect(limiter);
@@ -510,7 +539,15 @@ const enhPres = ctx.createBiquadFilter(); enhPres.type = 'peaking'; enhPres.freq
 const enhAir = ctx.createBiquadFilter(); enhAir.type = 'highshelf'; enhAir.frequency.value = 9000;
 const enhComp = ctx.createDynamicsCompressor(); enhComp.knee.value = 12; enhComp.attack.value = 0.005; enhComp.release.value = 0.2;
 const enhMake = ctx.createGain();
-gate.connect(enhMud); enhMud.connect(enhPres); enhPres.connect(enhAir); enhAir.connect(enhComp); enhComp.connect(enhMake); enhMake.connect(micGain);
+// MIC EQ (LOW / MID / HIGH, -12 hanggang +12 dB): kasama sa stream at sa monitor
+const mqLo = ctx.createBiquadFilter(); mqLo.type = 'lowshelf'; mqLo.frequency.value = 200;
+const mqMid = ctx.createBiquadFilter(); mqMid.type = 'peaking'; mqMid.frequency.value = 1500; mqMid.Q.value = 0.8;
+const mqHi = ctx.createBiquadFilter(); mqHi.type = 'highshelf'; mqHi.frequency.value = 5000;
+const MQ = [mqLo, mqMid, mqHi];
+gate.connect(mqLo); mqLo.connect(mqMid); mqMid.connect(mqHi); mqHi.connect(enhMud); enhMud.connect(enhPres); enhPres.connect(enhAir); const deEss = ctx.createBiquadFilter(); deEss.type = 'peaking'; deEss.frequency.value = 6500; deEss.Q.value = 2; deEss.gain.value = 0;   // DE-ESSER: bumababa lang kapag matalas ang "s"
+const deBP = ctx.createBiquadFilter(); deBP.type = 'bandpass'; deBP.frequency.value = 6500; deBP.Q.value = 1.2;
+const deAn = ctx.createAnalyser(); deAn.fftSize = 512;
+enhAir.connect(deEss); deEss.connect(enhComp); enhAir.connect(deBP); deBP.connect(deAn); enhComp.connect(enhMake); enhMake.connect(micGain);
 const ENH = {
   0: { mud: 0, pres: 0, air: 0, thr: 0, ratio: 1, make: 1 },
   1: { mud: -2, pres: 2, air: 1.5, thr: -22, ratio: 2.5, make: 1.15 },
@@ -524,6 +561,14 @@ function setEnh(v) {
 }
 try { const sv = localStorage.getItem('jfm_enh'); if (sv !== null && ENH[sv] !== undefined) $('#micEnh').value = sv; } catch {}
 setEnh($('#micEnh').value);
+const mqTxt = (v) => (v > 0 ? '+' : '') + v.toFixed(1) + ' dB';
+function setMq(k, v) { MQ[k].gain.setTargetAtTime(v, ctx.currentTime, 0.03); $('#mqv' + k).textContent = mqTxt(v); try { localStorage.setItem('jfm_mq' + k, v); } catch {} }
+[0, 1, 2].forEach((k) => {
+  try { const sv = parseFloat(localStorage.getItem('jfm_mq' + k)); if (!isNaN(sv)) $('#mq' + k).value = sv; } catch {}
+  const v0 = parseFloat($('#mq' + k).value) || 0; MQ[k].gain.value = v0; $('#mqv' + k).textContent = mqTxt(v0);
+  $('#mq' + k).oninput = (e) => { let v = parseFloat(e.target.value); if (Math.abs(v) <= 0.5) { v = 0; e.target.value = 0; } setMq(k, v); };
+});
+$('#mqReset').onclick = () => [0, 1, 2].forEach((k) => { $('#mq' + k).value = 0; setMq(k, 0); });
 $('#micEnh').onchange = (e) => { setEnh(e.target.value); try { localStorage.setItem('jfm_enh', e.target.value); } catch {} };
 
 const decks = [0, 1].map((i) => {
@@ -847,6 +892,51 @@ $('#monBtn').onclick = () => {
   $('#monBtn').classList.toggle('on', mon);
 };
 
+// DE-ESSER: sinusukat ang lakas ng 6.5kHz; kapag lumampas sa threshold, ibinababa ang band na iyon
+const DE = { 0: null, 1: { thr: -40, max: 4 }, 2: { thr: -37, max: 7 }, 3: { thr: -34, max: 10 } };
+let deCur = DE[1];
+function setDe(v) { deCur = DE[v] || null; try { localStorage.setItem('jfm_de', v); } catch {} }
+try { const sv = localStorage.getItem('jfm_de'); if (sv !== null && DE[sv] !== undefined) $('#deEss').value = sv; } catch {}
+setDe($('#deEss').value); $('#deEss').onchange = (e) => setDe(e.target.value);
+const deBuf = new Float32Array(deAn.fftSize);
+setInterval(() => {
+  let cut = 0;
+  if (deCur && micStream) {
+    deAn.getFloatTimeDomainData(deBuf);
+    let sum = 0; for (let i = 0; i < deBuf.length; i++) sum += deBuf[i] * deBuf[i];
+    const db = 20 * Math.log10(Math.sqrt(sum / deBuf.length) + 1e-9);
+    cut = Math.max(0, Math.min(deCur.max, (db - deCur.thr) * 0.8));
+  }
+  deEss.gain.setTargetAtTime(-cut, ctx.currentTime, 0.01);
+}, 15);
+// MUSIC CARVE: kapag may boses, bahagyang hinihina ang 2.5kHz ng kanta (stream at monitor) para lumitaw ang boses
+const CV = { 0: 0, 1: -3, 2: -5, 3: -8 };
+let carveV = CV[1], vFloor = 0.01, vHold = 0, vOn = false, lastCv = 0;
+try { const sv = localStorage.getItem('jfm_cv'); if (sv !== null && CV[sv] !== undefined) $('#carveLvl').value = sv; } catch {}
+carveV = CV[$('#carveLvl').value];
+$('#carveLvl').onchange = (e) => { carveV = CV[e.target.value]; try { localStorage.setItem('jfm_cv', e.target.value); } catch {} };
+const vBuf = new Float32Array(gateAn.fftSize);
+setInterval(() => {
+  let on = false;
+  if (micStream) {
+    gateAn.getFloatTimeDomainData(vBuf);
+    let sum = 0; for (let i = 0; i < vBuf.length; i++) sum += vBuf[i] * vBuf[i];
+    const rms = Math.sqrt(sum / vBuf.length), now = performance.now();
+    vFloor = rms < vFloor ? rms : vFloor + (rms - vFloor) * 0.002;
+    if (rms > (vOn ? Math.max(0.008, vFloor * 2) : Math.max(0.012, vFloor * 3))) vHold = now + 700;
+    on = now < vHold;
+  }
+  const target = on ? carveV : 0;
+  if (on !== vOn || target !== lastCv) { vOn = on; lastCv = target; carve.gain.setTargetAtTime(target, ctx.currentTime, on ? 0.05 : 0.4); }
+}, 20);
+// VOICE PRESETS: isang tap lang para sa Mic EQ + Enhancer + De-esser
+const PRESETS = { warm: { mq: [3, -1, -1], enh: 2, de: 1 }, bright: { mq: [-2, 1.5, 3], enh: 2, de: 2 }, deep: { mq: [5, -1, -2], enh: 1, de: 1 } };
+$('#voicePreset').onchange = (e) => {
+  const pr = PRESETS[e.target.value]; if (!pr) return;
+  pr.mq.forEach((v, k) => { $('#mq' + k).value = v; setMq(k, v); });
+  $('#micEnh').value = pr.enh; setEnh(pr.enh); try { localStorage.setItem('jfm_enh', pr.enh); } catch {}
+  $('#deEss').value = pr.de; setDe(pr.de);
+};
 // MIC MONITOR LOGIC: bukas lang ang boses sa speaker kapag may nagsasalita; sa monitor lang humihina ang kanta nang konti habang nagsasalita
 let mmLevelV = 0.35, mmHold = 0, mmOpen = false, mmFloor = 0.01;
 try { const sv = localStorage.getItem('jfm_mm'); if (sv !== null && !isNaN(sv)) { $('#micMon').value = sv; mmLevelV = sv / 100; } } catch {}
