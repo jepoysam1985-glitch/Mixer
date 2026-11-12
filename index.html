@@ -330,6 +330,16 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
     <option value="2" selected>Medium</option>
     <option value="3">High (strong)</option>
   </select>
+  <label for="micEnh">Mic Enhancer (voice clarity)</label>
+  <select id="micEnh">
+    <option value="0">Off</option>
+    <option value="1">Light</option>
+    <option value="2" selected>Medium</option>
+    <option value="3">Strong</option>
+  </select>
+  <label>Mic monitor in phone: <b id="mmv">35%</b></label>
+  <input type="range" min="0" max="100" value="35" id="micMon">
+  <div class="hint">Hear your voice and the music on the phone speaker. If you hear feedback (whistling), lower this. 0 = you will not hear your own voice. The stream is never affected.</div>
   <label for="micAec">Phone echo-cancel (mic)</label>
   <select id="micAec">
     <option value="0" selected>Off (recommended: voice works while music plays)</option>
@@ -464,7 +474,8 @@ micGain.connect(master);
 master.connect(limiter);
 limiter.connect(analyser);
 limiter.connect(dest);
-duckGain.connect(monitor);          // ang kanta lang ang naririnig sa phone (iwas feedback sa mic)
+const musicMon = ctx.createGain();   // monitor-only na level ng kanta (hihina nang konti kapag nagsasalita ka; hindi apektado ang stream)
+duckGain.connect(musicMon); musicMon.connect(monitor);
 monitor.connect(ctx.destination);
 
 // ECHO ng mic: delay na may feedback at lowpass para natural ang tunog
@@ -476,7 +487,14 @@ micGain.connect(echoDelay); echoDelay.connect(echoTone);
 echoTone.connect(echoFb); echoFb.connect(echoDelay);
 echoTone.connect(echoWet); echoWet.connect(master);
 // PAKINGGAN ANG MIC (boses + echo) sa headphone/Bluetooth; hindi ito kasama sa stream, pang-monitor lang
-micGain.connect(monitor); echoWet.connect(monitor);   // MONITOR = kanta + effects + boses mo (may echo) sa phone/Bluetooth; hindi kasama sa stream
+// MIC MONITOR (para sa speaker ng phone): hiwalay na daan na may filter, limiter at sariling gate para hindi tumili ang feedback; hindi ito kasama sa stream
+const mmHP = ctx.createBiquadFilter(); mmHP.type = 'highpass'; mmHP.frequency.value = 180; mmHP.Q.value = 0.7;
+const mmLP = ctx.createBiquadFilter(); mmLP.type = 'lowpass'; mmLP.frequency.value = 4200; mmLP.Q.value = 0.7;
+const mmLim = ctx.createDynamicsCompressor(); mmLim.threshold.value = -14; mmLim.knee.value = 6; mmLim.ratio.value = 12; mmLim.attack.value = 0.003; mmLim.release.value = 0.15;
+const mmGate = ctx.createGain(); mmGate.gain.value = 0;
+const mmLevel = ctx.createGain(); mmLevel.gain.value = 0.35;
+micGain.connect(mmHP); echoWet.connect(mmHP);
+mmHP.connect(mmLP); mmLP.connect(mmLim); mmLim.connect(mmGate); mmGate.connect(mmLevel); mmLevel.connect(monitor);   // MONITOR = kanta + effects + boses mo (may echo) sa phone/Bluetooth; hindi kasama sa stream
 // pang-detect ng boses para sa auto-duck
 const micAn = ctx.createAnalyser(); micAn.fftSize = 1024;
 micGain.connect(micAn);
@@ -485,7 +503,28 @@ const micIn = ctx.createGain();
 const micHP = ctx.createBiquadFilter(); micHP.type = 'highpass'; micHP.frequency.value = 90; micHP.Q.value = 0.7;
 const gate = ctx.createGain();
 const gateAn = ctx.createAnalyser(); gateAn.fftSize = 1024;
-micIn.connect(micHP); micHP.connect(gate); micHP.connect(gateAn); gate.connect(micGain);
+micIn.connect(micHP); micHP.connect(gate); micHP.connect(gateAn);
+// MIC ENHANCER: bawas "putik" (250Hz), dagdag linaw (3.2kHz) at "hangin" (9kHz), compressor para pantay ang lakas ng boses
+const enhMud = ctx.createBiquadFilter(); enhMud.type = 'peaking'; enhMud.frequency.value = 250; enhMud.Q.value = 0.9;
+const enhPres = ctx.createBiquadFilter(); enhPres.type = 'peaking'; enhPres.frequency.value = 3200; enhPres.Q.value = 1;
+const enhAir = ctx.createBiquadFilter(); enhAir.type = 'highshelf'; enhAir.frequency.value = 9000;
+const enhComp = ctx.createDynamicsCompressor(); enhComp.knee.value = 12; enhComp.attack.value = 0.005; enhComp.release.value = 0.2;
+const enhMake = ctx.createGain();
+gate.connect(enhMud); enhMud.connect(enhPres); enhPres.connect(enhAir); enhAir.connect(enhComp); enhComp.connect(enhMake); enhMake.connect(micGain);
+const ENH = {
+  0: { mud: 0, pres: 0, air: 0, thr: 0, ratio: 1, make: 1 },
+  1: { mud: -2, pres: 2, air: 1.5, thr: -22, ratio: 2.5, make: 1.15 },
+  2: { mud: -3, pres: 3.5, air: 3, thr: -26, ratio: 3.5, make: 1.4 },
+  3: { mud: -4, pres: 5, air: 4, thr: -30, ratio: 5, make: 1.8 },
+};
+function setEnh(v) {
+  const e = ENH[v] || ENH[0], t = ctx.currentTime;
+  enhMud.gain.setTargetAtTime(e.mud, t, 0.05); enhPres.gain.setTargetAtTime(e.pres, t, 0.05); enhAir.gain.setTargetAtTime(e.air, t, 0.05);
+  enhComp.threshold.value = e.thr; enhComp.ratio.value = e.ratio; enhMake.gain.setTargetAtTime(e.make, t, 0.05);
+}
+try { const sv = localStorage.getItem('jfm_enh'); if (sv !== null && ENH[sv] !== undefined) $('#micEnh').value = sv; } catch {}
+setEnh($('#micEnh').value);
+$('#micEnh').onchange = (e) => { setEnh(e.target.value); try { localStorage.setItem('jfm_enh', e.target.value); } catch {} };
 
 const decks = [0, 1].map((i) => {
   const audio = new Audio();
@@ -807,6 +846,32 @@ $('#monBtn').onclick = () => {
   $('#monBtn').textContent = '🎧\nMonitor\n' + (mon ? 'ON' : 'OFF');
   $('#monBtn').classList.toggle('on', mon);
 };
+
+// MIC MONITOR LOGIC: bukas lang ang boses sa speaker kapag may nagsasalita; sa monitor lang humihina ang kanta nang konti habang nagsasalita
+let mmLevelV = 0.35, mmHold = 0, mmOpen = false, mmFloor = 0.01;
+try { const sv = localStorage.getItem('jfm_mm'); if (sv !== null && !isNaN(sv)) { $('#micMon').value = sv; mmLevelV = sv / 100; } } catch {}
+mmLevel.gain.value = mmLevelV; $('#mmv').textContent = Math.round(mmLevelV * 100) + '%';
+$('#micMon').oninput = (e) => {
+  mmLevelV = e.target.value / 100; mmLevel.gain.setTargetAtTime(mmLevelV, ctx.currentTime, 0.03); $('#mmv').textContent = e.target.value + '%';
+  try { localStorage.setItem('jfm_mm', e.target.value); } catch {}
+};
+const mmBuf = new Float32Array(gateAn.fftSize);
+setInterval(() => {
+  let open = false;
+  if (micStream && mon && mmLevelV > 0) {
+    gateAn.getFloatTimeDomainData(mmBuf);
+    let sum = 0; for (let i = 0; i < mmBuf.length; i++) sum += mmBuf[i] * mmBuf[i];
+    const rms = Math.sqrt(sum / mmBuf.length), now = performance.now();
+    mmFloor = rms < mmFloor ? rms : mmFloor + (rms - mmFloor) * 0.002;      // sinusundan ang ingay sa paligid (pati tunog ng speaker na pumapasok sa mic)
+    if (rms > (mmOpen ? Math.max(0.008, mmFloor * 2) : Math.max(0.012, mmFloor * 3))) mmHold = now + 600;
+    open = now < mmHold;
+  }
+  if (open !== mmOpen) {
+    mmOpen = open;
+    mmGate.gain.setTargetAtTime(open ? 1 : 0, ctx.currentTime, open ? 0.01 : 0.15);
+    musicMon.gain.setTargetAtTime(open ? 0.5 : 1, ctx.currentTime, open ? 0.08 : 0.5);
+  }
+}, 20);
 
 async function reopenMic() {              // habang nagmo-monitor, patay ang echo-cancel/noise-suppress ng phone (kinakain nito ang boses sa loop)
   if (!micStream) return;
