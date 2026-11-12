@@ -1142,6 +1142,7 @@ async function sendNowPlaying(title) {
     const mk = (mm) => scheme + '://' + c.host + ':' + c.port + '/admin/metadata?mode=updinfo&charset=UTF-8&mount=' + encodeURIComponent(mm) + '&song=' + encodeURIComponent(title);
     tries.push(mk(m));
     if (/\/source$/.test(m)) tries.push(mk(m.replace(/\/source$/, '')));   // Zeno: minsan walang "/source" ang mount sa metadata
+    else tries.push(mk(m + '/source'));
   } else {
     tries.push('http://' + c.host + ':' + (parseInt(c.port, 10) - 1) + '/admin.cgi?pass=' + encodeURIComponent(c.password) + '&mode=updinfo&song=' + encodeURIComponent(title));
   }
@@ -1150,7 +1151,8 @@ async function sendNowPlaying(title) {
     try {
       const r = await C.request({ url, method: 'GET', headers, connectTimeout: 5000, readTimeout: 5000 });
       if (r && r.status < 400) { npWarned = false; toast('Now playing sent: ' + title); return; }
-      last = 'HTTP ' + (r && r.status);
+      const body = r && r.data ? String(typeof r.data === 'string' ? r.data : JSON.stringify(r.data)).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 70) : '';
+      last = 'HTTP ' + (r && r.status) + (body ? ' ' + body : '') + ' @' + new URL(url).pathname.slice(0, 40);
     } catch (e) { last = (e && e.message) || 'network error'; }
   }
   if (!npWarned) { npWarned = true; toast('The server did not accept the title (' + last + ').'); }
