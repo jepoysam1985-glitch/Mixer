@@ -115,6 +115,7 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
 .mq.run{animation:mq var(--dur,8s) ease-in-out infinite alternate}
 @keyframes mq{0%,14%{transform:translateX(0)}86%,100%{transform:translateX(var(--dist,0px))}}
 @media (prefers-reduced-motion:reduce){.mq.run{animation:none}}
+.now .cov{flex:none;width:34px;height:34px;border-radius:5px;object-fit:cover;margin-right:8px;background:#000}
 #liveBtn{flex:1.4;width:auto;height:60px;font-size:11.5px;letter-spacing:.3px;line-height:1.2;white-space:pre-line;padding:0 2px;border-radius:12px;min-width:0}
 #status{margin-top:8px}
 </style>
@@ -741,13 +742,80 @@ function load(d, k) {
   d.audio.src = d.url;
   if (window.wfAnalyze) wfAnalyze(d);
   mqSet($('#now' + d.i), d.list[k].name.replace(/\.[^.]+$/, ''));
+  loadMeta(d, d.list[k]);
   renderList(d);
+}
+// ===== ID3 TAGS (title, artist, cover art) =====
+function id3Text(enc, b) {
+  try {
+    if (enc === 1) {
+      const be = b[0] === 0xFE && b[1] === 0xFF, le = b[0] === 0xFF && b[1] === 0xFE;
+      return new TextDecoder(be ? 'utf-16be' : 'utf-16le').decode(be || le ? b.subarray(2) : b);
+    }
+    if (enc === 2) return new TextDecoder('utf-16be').decode(b);
+    if (enc === 3) return new TextDecoder('utf-8').decode(b);
+    return new TextDecoder('windows-1252').decode(b);
+  } catch { return ''; }
+}
+const id3Clean = (t) => t.split('\0')[0].replace(/\s+/g, ' ').trim();
+async function readTags(file) {
+  const out = {};
+  try {
+    const h = new Uint8Array(await file.slice(0, 10).arrayBuffer());
+    if (h[0] !== 0x49 || h[1] !== 0x44 || h[2] !== 0x33) return out;
+    const ver = h[3], size = (h[6] << 21) | (h[7] << 14) | (h[8] << 7) | h[9];
+    const b = new Uint8Array(await file.slice(10, 10 + Math.min(size, 12 * 1024 * 1024)).arrayBuffer());
+    let p = 0;
+    if ((h[5] & 0x40) && ver >= 3) p = ver === 4 ? ((b[0] << 21) | (b[1] << 14) | (b[2] << 7) | b[3]) : (((b[0] << 24) | (b[1] << 16) | (b[2] << 8) | b[3]) >>> 0) + 4;
+    const idL = ver === 2 ? 3 : 4, hL = ver === 2 ? 6 : 10;
+    while (p + hL <= b.length && b[p] !== 0) {
+      const id = String.fromCharCode(...b.subarray(p, p + idL));
+      const fs = ver === 2 ? (b[p + 3] << 16) | (b[p + 4] << 8) | b[p + 5]
+        : ver === 4 ? (b[p + 4] << 21) | (b[p + 5] << 14) | (b[p + 6] << 7) | b[p + 7]
+        : ((b[p + 4] << 24) | (b[p + 5] << 16) | (b[p + 6] << 8) | b[p + 7]) >>> 0;
+      const st = p + hL, en = st + fs;
+      if (fs <= 0 || en > b.length) break;
+      const fr = b.subarray(st, en);
+      if (id === 'TIT2' || id === 'TT2') out.title = id3Clean(id3Text(fr[0], fr.subarray(1)));
+      else if (id === 'TPE1' || id === 'TP1') out.artist = id3Clean(id3Text(fr[0], fr.subarray(1)));
+      else if ((id === 'APIC' || id === 'PIC') && !out.pic) {
+        let i = 1, mime = 'image/jpeg';
+        if (id === 'APIC') { let e = i; while (e < fr.length && fr[e] !== 0) e++; mime = String.fromCharCode(...fr.subarray(i, e)) || mime; i = e + 1; }
+        else { mime = String.fromCharCode(...fr.subarray(1, 4)).toLowerCase() === 'png' ? 'image/png' : 'image/jpeg'; i = 4; }
+        i++;   // picture type
+        if (fr[0] === 1 || fr[0] === 2) { while (i + 1 < fr.length && !(fr[i] === 0 && fr[i + 1] === 0)) i += 2; i += 2; }
+        else { while (i < fr.length && fr[i] !== 0) i++; i++; }
+        if (i < fr.length && mime.indexOf('/') > 0) out.pic = new Blob([fr.slice(i)], { type: mime });
+      }
+      p = en;
+    }
+  } catch {}
+  return out;
+}
+function loadMeta(d, f) {
+  const fb = f.name.replace(/\.[^.]+$/, '');
+  if (d.coverUrl) { URL.revokeObjectURL(d.coverUrl); d.coverUrl = null; }
+  const m = d.meta = { file: f, label: fb };
+  d._metaP = readTags(f).then((t) => {
+    if (d.meta !== m) return;
+    m.label = t.artist && t.title ? t.artist + ' - ' + t.title : (t.title || fb);
+    const el = $('#now' + d.i);
+    mqSet(el, m.label);
+    if (t.pic) {
+      d.coverUrl = URL.createObjectURL(t.pic);
+      const img = new Image(); img.className = 'cov'; img.alt = ''; img.src = d.coverUrl;
+      img.onerror = () => img.remove();
+      el.prepend(img);
+      requestAnimationFrame(() => mqFitAll(el));
+    }
+  });
 }
 function clearDeck(d) {
   d.audio.pause(); d.audio.removeAttribute('src'); d.audio.load();
   if (d.url) { URL.revokeObjectURL(d.url); d.url = null; }
   d.idx = -1; d.orphan = false;
   d.wfTok = (d.wfTok || 0) + 1; d.wf = null; d.wfState = 'none';
+  d.meta = null; if (d.coverUrl) { URL.revokeObjectURL(d.coverUrl); d.coverUrl = null; }
   mqSet($('#now' + d.i), 'No track');
   $('#time' + d.i).textContent = '0:00 / 0:00';
   updatePlayBtn(d);
@@ -1064,22 +1132,33 @@ try { const sv = localStorage.getItem('jfm_np'); if (sv !== null) $('#o_np').val
 $('#o_np').onchange = (e) => { try { localStorage.setItem('jfm_np', e.target.value); } catch {} };
 async function sendNowPlaying(title) {
   if (!ws || !proc || $('#o_np').value !== '1' || !title || title === 'No track') return;
-  const C = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.CapacitorHttp; if (!C) return;
-  const c = getCfg(); let url, headers = {};
+  const C = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.CapacitorHttp;
+  if (!C) { if (!npWarned) { npWarned = true; toast('Now-playing title needs the Android app (CapacitorHttp not found).'); } return; }
+  const c = getCfg(), headers = {}, tries = [];
+  const scheme = String(c.port) === '443' ? 'https' : 'http';
   if (c.mode === 'icecast') {
     const m = c.mount.startsWith('/') ? c.mount : '/' + c.mount;
-    url = 'http://' + c.host + ':' + c.port + '/admin/metadata?mode=updinfo&mount=' + encodeURIComponent(m) + '&song=' + encodeURIComponent(title);
     headers.Authorization = 'Basic ' + b64(te(c.user + ':' + c.password));
+    const mk = (mm) => scheme + '://' + c.host + ':' + c.port + '/admin/metadata?mode=updinfo&charset=UTF-8&mount=' + encodeURIComponent(mm) + '&song=' + encodeURIComponent(title);
+    tries.push(mk(m));
+    if (/\/source$/.test(m)) tries.push(mk(m.replace(/\/source$/, '')));   // Zeno: minsan walang "/source" ang mount sa metadata
   } else {
-    url = 'http://' + c.host + ':' + (parseInt(c.port, 10) - 1) + '/admin.cgi?pass=' + encodeURIComponent(c.password) + '&mode=updinfo&song=' + encodeURIComponent(title);
+    tries.push('http://' + c.host + ':' + (parseInt(c.port, 10) - 1) + '/admin.cgi?pass=' + encodeURIComponent(c.password) + '&mode=updinfo&song=' + encodeURIComponent(title));
   }
-  try {
-    const r = await C.request({ url, method: 'GET', headers, connectTimeout: 5000, readTimeout: 5000 });
-    if (r && r.status >= 400 && !npWarned) { npWarned = true; toast('The server did not accept the now-playing title (HTTP ' + r.status + ').'); }
-  } catch { if (!npWarned) { npWarned = true; toast('Could not send the now-playing title to the server.'); } }
+  let last = '';
+  for (const url of tries) {
+    try {
+      const r = await C.request({ url, method: 'GET', headers, connectTimeout: 5000, readTimeout: 5000 });
+      if (r && r.status < 400) { npWarned = false; toast('Now playing sent: ' + title); return; }
+      last = 'HTTP ' + (r && r.status);
+    } catch (e) { last = (e && e.message) || 'network error'; }
+  }
+  if (!npWarned) { npWarned = true; toast('The server did not accept the title (' + last + ').'); }
 }
-function npAnnounce() { const pd = decks.find((x) => !x.audio.paused); if (pd) { lastNP = $('#now' + pd.i).textContent.trim(); sendNowPlaying(lastNP); } }
-decks.forEach((d) => d.audio.addEventListener('playing', () => { const t = $('#now' + d.i).textContent.trim(); if (t !== lastNP) { lastNP = t; sendNowPlaying(t); } }));
+const npLabel = (d) => (d.meta && d.meta.label) || '';
+async function npSend(d) { try { await d._metaP; } catch {} const t = npLabel(d); if (t && t !== lastNP) { lastNP = t; sendNowPlaying(t); } }
+function npAnnounce() { const pd = decks.find((x) => !x.audio.paused); if (pd) { lastNP = ''; npSend(pd); } }
+decks.forEach((d) => d.audio.addEventListener('playing', () => npSend(d)));
 // ===== RECORDING NG SHOW (parehong mix ng stream) =====
 let rec = null, recChunks = [], recT0 = 0, recTick = 0;
 const recStamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()); };
