@@ -264,6 +264,10 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
 .pad{border-radius:10px}
 .pad:not(.empty)::before{border-radius:7px 7px 16px 16px/7px 7px 10px 10px;left:10%;right:10%;top:7%;height:30%}
 </style>
+<style>
+li .x.up{background:#1d2530;color:#8fc7ff;min-width:30px}
+#toolsCard .row{gap:5px}#toolsCard .row button{height:46px;font-size:11px;padding:0 4px;white-space:normal;line-height:1.15;min-width:0}
+</style>
 </head>
 <body>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -295,6 +299,16 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
     <option value="96k">96 kbps</option>
     <option value="128k" selected>128 kbps</option>
     <option value="192k">192 kbps</option>
+  </select>
+  <label for="o_retry">Auto-reconnect when the stream drops</label>
+  <select id="o_retry">
+    <option value="1" selected>On</option>
+    <option value="0">Off</option>
+  </select>
+  <label for="o_np">Send now-playing title to server (best effort)</label>
+  <select id="o_np">
+    <option value="1" selected>On</option>
+    <option value="0">Off</option>
   </select>
   <button id="closeSettings2" style="width:100%;height:50px;margin-top:14px;background:var(--acc);border-color:var(--acc);color:#fff;font-size:13.5px">Done</button>
 </div>
@@ -368,6 +382,20 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
   <label>Mic monitor in phone: <b id="mmv">35%</b></label>
   <input type="range" min="0" max="100" value="35" id="micMon">
   <div class="hint">Hear your voice and the music on the phone speaker. If you hear feedback (whistling), lower this. 0 = you will not hear your own voice. The stream is never affected.</div>
+  <label for="lowCut">Mic low-cut (removes rumble / wind)</label>
+  <select id="lowCut">
+    <option value="60">60 Hz (keeps more bass)</option>
+    <option value="90" selected>90 Hz (default)</option>
+    <option value="120">120 Hz</option>
+    <option value="150">150 Hz (thin, for noisy mics)</option>
+  </select>
+  <label for="revLvl">Voice reverb (studio room, stream only)</label>
+  <select id="revLvl">
+    <option value="0">Off</option>
+    <option value="1" selected>Light</option>
+    <option value="2">Medium</option>
+    <option value="3">Strong</option>
+  </select>
   <label for="micAec">Phone echo-cancel (mic)</label>
   <select id="micAec">
     <option value="0" selected>Off (recommended: voice works while music plays)</option>
@@ -382,6 +410,46 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
   </select>
   <label>Music level while speaking: <b id="duckv">25%</b></label>
   <input type="range" min="0" max="100" value="25" id="duckLvl">
+  <label for="glueLvl">Master compressor (even out the whole stream)</label>
+  <select id="glueLvl">
+    <option value="0">Off</option>
+    <option value="1" selected>Light</option>
+    <option value="2">Medium</option>
+  </select>
+  <label for="deadAir">Dead-air alarm (no sound on the stream)</label>
+  <select id="deadAir">
+    <option value="0">Off</option>
+    <option value="5">After 5 seconds</option>
+    <option value="10" selected>After 10 seconds</option>
+    <option value="20">After 20 seconds</option>
+  </select>
+  <label for="pttMode">Push-to-talk (mic only while you hold the button)</label>
+  <select id="pttMode">
+    <option value="0" selected>Off (mic always open)</option>
+    <option value="1">On (hold HOLD TO TALK)</option>
+  </select>
+  <label for="jingleMode">Auto-jingle (plays an effect automatically)</label>
+  <select id="jingleMode">
+    <option value="off" selected>Off</option>
+    <option value="s3">Every 3 songs</option>
+    <option value="s5">Every 5 songs</option>
+    <option value="t10">Every 10 minutes</option>
+    <option value="t15">Every 15 minutes</option>
+  </select>
+  <select id="jingleSlot" style="margin-top:6px" aria-label="Jingle effect slot">
+    <option value="0" selected>Jingle: random loaded effect</option>
+    <option value="1">Jingle: effect 1</option><option value="2">Jingle: effect 2</option><option value="3">Jingle: effect 3</option>
+    <option value="4">Jingle: effect 4</option><option value="5">Jingle: effect 5</option><option value="6">Jingle: effect 6</option>
+    <option value="7">Jingle: effect 7</option><option value="8">Jingle: effect 8</option><option value="9">Jingle: effect 9</option>
+    <option value="10">Jingle: effect 10</option><option value="11">Jingle: effect 11</option><option value="12">Jingle: effect 12</option>
+  </select>
+  <label for="ltLvl">Loudness target (auto level): <b id="alv">off</b></label>
+  <select id="ltLvl">
+    <option value="0" selected>Off</option>
+    <option value="1">Gentle (-20 dB)</option>
+    <option value="2">Standard (-17 dB)</option>
+    <option value="3">Loud (-14 dB)</option>
+  </select>
   <label for="mixSec">Auto-mix crossfade</label>
   <select id="mixSec">
     <option value="3">Crossfade 3s</option>
@@ -410,7 +478,7 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
   <div class="card vmeter" aria-label="Music and microphone level">
     <div class="vmpair">
       <div class="vmcol"><span class="vl" aria-label="Music">♪</span><div class="vm"><i id="meterMusic"></i></div></div>
-      <div class="vmcol"><span class="vl" aria-label="Microphone">🎤</span><div class="vm"><i id="meterMic"></i></div></div>
+      <div class="vmcol"><span class="vl" id="micLbl" aria-label="Microphone">🎤</span><div class="vm"><i id="meterMic"></i></div></div>
     </div>
   </div>
   <div class="card deck" id="deck1">
@@ -444,6 +512,14 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
   </div>
 </div>
 
+<div class="card" id="toolsCard">
+  <div class="row" style="margin-top:0">
+    <button id="recBtn">⏺ REC</button>
+    <button id="fadeBtn">⏬ FADE OUT</button>
+    <button id="plBtn">📂 LISTS</button>
+  </div>
+</div>
+
 <div class="card" id="micCard">
   <div class="row" style="margin-top:0;gap:4px">
     <button id="duckBtn">🔉
@@ -462,6 +538,7 @@ Effects
 OFF</button>
   </div>
   <div id="status">Not live</div>
+  <button id="pttBtn" hidden style="width:100%;height:54px;margin-top:8px;font-size:13px;-webkit-touch-callout:none">🎙 HOLD TO TALK</button>
 </div>
 
 <div class="card" id="fxCard" hidden>
@@ -479,6 +556,20 @@ OFF</button>
 
 
 <script>
+// WORKER TIMER: ang mga setInterval (auto-mix, loop, gate, duck, atbp.) ay pinapatakbo ng Web Worker para hindi bumagal kapag naka-background o naka-lock ang screen
+(function () {
+  try {
+    const w = new Worker(URL.createObjectURL(new Blob(['const t={};onmessage=function(e){var d=e.data;if(d.stop){clearInterval(t[d.id]);delete t[d.id]}else{t[d.id]=setInterval(function(){postMessage(d.id)},d.ms)}}'], { type: 'application/javascript' })));
+    const fns = new Map(); let nid = 1;
+    const nativeSet = window.setInterval.bind(window), nativeClear = window.clearInterval.bind(window);
+    w.onmessage = (e) => { const f = fns.get(e.data); if (f) { try { f(); } catch (err) { console.error(err); } } };
+    window.setInterval = function (fn, ms, ...a) {
+      if (typeof fn !== 'function' || !(ms <= 1000)) return nativeSet(fn, ms, ...a);
+      const id = 'w' + nid++; fns.set(id, () => fn(...a)); w.postMessage({ id, ms: Math.max(4, ms | 0) }); return id;
+    };
+    window.clearInterval = function (id) { if (typeof id === 'string') { fns.delete(id); w.postMessage({ id, stop: true }); } else nativeClear(id); };
+  } catch (e) {}
+})();
 const $ = (s) => document.querySelector(s);
 // TOAST: non-blocking na kapalit ng toast() (hinaharang ng alert ang audio thread habang live)
 let toastT;
@@ -500,7 +591,10 @@ const carve = ctx.createBiquadFilter(); carve.type = 'peaking'; carve.frequency.
 tracksGain.connect(carve); carve.connect(duckGain);
 duckGain.connect(master);
 micGain.connect(master);
-master.connect(limiter);
+const glue = ctx.createDynamicsCompressor(); glue.knee.value = 10; glue.attack.value = 0.02; glue.release.value = 0.25;   // MASTER GLUE: pantay ang lakas ng buong stream
+const glueMk = ctx.createGain();
+master.connect(glue); glue.connect(glueMk); const autoLvl = ctx.createGain();   // LOUDNESS TARGET: mabagal na auto-level bago ang limiter
+glueMk.connect(autoLvl); autoLvl.connect(limiter);
 limiter.connect(analyser);
 limiter.connect(dest);
 const musicMon = ctx.createGain();   // monitor-only na level ng kanta (hihina nang konti kapag nagsasalita ka; hindi apektado ang stream)
@@ -629,7 +723,10 @@ function renderList(d) {
     const x = document.createElement('b');
     x.className = 'x'; x.textContent = '✕'; x.setAttribute('role', 'button'); x.tabIndex = 0; x.setAttribute('aria-label', 'Remove track');
     x.onclick = (e) => { e.stopPropagation(); removeTrack(d, k); };
-    li.append(t, x);
+    const up = document.createElement('b');
+    up.className = 'x up'; up.textContent = '▲'; up.setAttribute('role', 'button'); up.tabIndex = 0; up.setAttribute('aria-label', 'Move track up');
+    up.onclick = (e) => { e.stopPropagation(); moveTrack(d, k); };
+    li.append(t, up, x);
     if (k === d.idx && !d.orphan) li.className = 'cur';
     li.onclick = () => { load(d, k); play(d); };
     ul.appendChild(li);
@@ -638,7 +735,7 @@ function renderList(d) {
 }
 function load(d, k) {
   if (k < 0 || k >= d.list.length) return;
-  d.idx = k; d.finished = false; d.loads++; d.orphan = false;
+  d.idx = k; d.finished = false; d.loads++; d.orphan = false; d.dropped = false;
   if (d.url) URL.revokeObjectURL(d.url);
   d.url = URL.createObjectURL(d.list[k]);
   d.audio.src = d.url;
@@ -670,6 +767,9 @@ function removeTrack(d, k) {            // alisin sa listahan (hindi binubura an
 }
 function dropFinished(d) {              // laging alisin sa listahan ang natapos na kanta
   if (d.orphan || d.idx < 0 || d.idx >= d.list.length) return;
+  if (typeof jingleSong === 'function') jingleSong();   // bilang ng natapos na kanta (para sa auto-jingle)
+  if (d.repeat) return;                                  // REPEAT: hindi inaalis ang kanta
+  d.dropped = true;
   d.list.splice(d.idx, 1); d.idx--;
   if (!d.list.length) clearDeck(d); else renderList(d);
 }
@@ -685,8 +785,21 @@ function updatePlayBtn(d) {
   b.textContent = d.audio.paused ? '▶' : '❚❚';
   b.classList.toggle('on', !d.audio.paused);
 }
+function nextIdx(d) {                    // susunod na kanta: shuffle / repeat / sunod-sunod
+  const n = d.list.length; if (!n) return -1;
+  const cur = (d.orphan || d.dropped) ? -1 : d.idx;
+  if (d.repeat === 'one' && cur >= 0) return cur;
+  if (d.shuffle) {
+    if (n === 1) return (cur === 0 && !d.repeat) ? -1 : 0;
+    let k; do { k = (Math.random() * n) | 0; } while (k === cur);
+    return k;
+  }
+  if (d.idx + 1 < n) return d.idx + 1;
+  return d.repeat === 'all' ? 0 : -1;
+}
 function next(d) {
-  if (d.idx + 1 < d.list.length) { load(d, d.idx + 1); d.audio.play().catch(() => {}); }
+  const nk = nextIdx(d);
+  if (nk >= 0) { load(d, nk); d.audio.play().catch(() => {}); }
   updatePlayBtn(d);
 }
 
@@ -737,7 +850,8 @@ micGain.gain.value = 1;
 // AUTO-MIX
 let autoMix = false, mixSec = 5, fading = false;
 function cueNext(d) {            // ihanda (hindi i-play) ang susunod na kanta ng deck
-  if (d.idx + 1 < d.list.length) { load(d, d.idx + 1); return true; }
+  const nk = nextIdx(d);
+  if (nk >= 0) { load(d, nk); return true; }
   d.finished = true;
   return false;
 }
@@ -838,9 +952,10 @@ $('#echoTime').onchange = (e) => echoDelay.delayTime.setTargetAtTime(parseFloat(
 // NOISE GATE controls
 const NR = { 0: null, 1: { thr: 0.008, floor: 0.25 }, 2: { thr: 0.015, floor: 0.1 }, 3: { thr: 0.03, floor: 0.03 } };
 let nr = NR[2], gateOpen = true, gateHold = 0;
+let lcHz = 90;
 function setNR(v) {
   nr = NR[v] || null;
-  micHP.frequency.value = nr ? 90 : 10;
+  micHP.frequency.value = nr ? lcHz : 10;
   if (!nr) { gate.gain.setTargetAtTime(1, ctx.currentTime, 0.02); gateOpen = true; }
 }
 try { const sv = localStorage.getItem('jfm_nr'); if (sv !== null && NR[sv] !== undefined) $('#nrLvl').value = sv; } catch {}
@@ -892,6 +1007,245 @@ $('#monBtn').onclick = () => {
   $('#monBtn').classList.toggle('on', mon);
 };
 
+// ===== SHUFFLE / REPEAT (bawat deck) at pag-reorder ng listahan =====
+function moveTrack(d, k) {
+  if (k <= 0 || k >= d.list.length) return;
+  [d.list[k - 1], d.list[k]] = [d.list[k], d.list[k - 1]];
+  if (!d.orphan) { if (d.idx === k) d.idx = k - 1; else if (d.idx === k - 1) d.idx = k; }
+  renderList(d);
+}
+decks.forEach((d) => {
+  d.shuffle = false; d.repeat = null;
+  const row = document.createElement('div'); row.className = 'addrow'; row.style.gridTemplateColumns = '1fr 1fr';
+  const sb = document.createElement('button'), rb = document.createElement('button');
+  sb.textContent = '🔀 OFF'; rb.textContent = '🔁 OFF';
+  sb.setAttribute('aria-label', 'Deck ' + (d.i + 1) + ' shuffle'); rb.setAttribute('aria-label', 'Deck ' + (d.i + 1) + ' repeat');
+  sb.onclick = () => { d.shuffle = !d.shuffle; sb.textContent = '🔀 ' + (d.shuffle ? 'ON' : 'OFF'); sb.classList.toggle('on', d.shuffle); };
+  rb.onclick = () => { d.repeat = d.repeat === null ? 'all' : d.repeat === 'all' ? 'one' : null; rb.textContent = d.repeat === 'one' ? '🔂 ONE' : '🔁 ' + (d.repeat ? 'ALL' : 'OFF'); rb.classList.toggle('on', !!d.repeat); };
+  row.append(sb, rb); $('#deck' + d.i + ' .addrow').after(row);
+});
+// ===== AUTO-JINGLE: effect pad bawat ilang kanta o minuto =====
+let jSongs = 0, jLast = Date.now(), jWarned = false;
+try { const sv = localStorage.getItem('jfm_jm'); if (sv) $('#jingleMode').value = sv; const sl = localStorage.getItem('jfm_js'); if (sl) $('#jingleSlot').value = sl; } catch {}
+$('#jingleMode').onchange = (e) => { jSongs = 0; jLast = Date.now(); try { localStorage.setItem('jfm_jm', e.target.value); } catch {} };
+$('#jingleSlot').onchange = (e) => { try { localStorage.setItem('jfm_js', e.target.value); } catch {} };
+function playJingle() {
+  const loaded = fx.map((f, i) => (f.buf ? i : -1)).filter((i) => i >= 0);
+  if (!loaded.length) { if (!jWarned) { jWarned = true; toast('Auto-jingle: no effects loaded. Add some in 🔔 Effects.'); } return; }
+  const sl = parseInt($('#jingleSlot').value, 10);
+  const i = sl > 0 && fx[sl - 1].buf ? sl - 1 : loaded[(Math.random() * loaded.length) | 0];
+  ctx.resume(); fxPlay(i);
+}
+function jingleSong() {
+  const m = $('#jingleMode').value; jSongs++;
+  if ((m === 's3' && jSongs >= 3) || (m === 's5' && jSongs >= 5)) { jSongs = 0; setTimeout(playJingle, 800); }
+}
+setInterval(() => {
+  const m = $('#jingleMode').value;
+  if ((m === 't10' || m === 't15') && Date.now() - jLast >= (m === 't10' ? 600000 : 900000)) { jLast = Date.now(); if (decks.some((d) => !d.audio.paused)) playJingle(); }
+}, 5000);
+// ===== FADE-OUT: dahan-dahang pinapahina ang lahat ng tumutugtog, tapos naka-pause (nananatili ang posisyon) =====
+let fadeBusy = false;
+$('#fadeBtn').onclick = () => {
+  if (fadeBusy) return;
+  const act = decks.filter((d) => !d.audio.paused);
+  if (!act.length) { toast('Nothing is playing.'); return; }
+  fadeBusy = true; fading = true; const sec = mixSec, t = ctx.currentTime;
+  $('#fadeBtn').classList.add('on');
+  act.forEach((d) => { const g = d.fader.gain; g.cancelScheduledValues(t); g.setValueAtTime(g.value, t); g.linearRampToValueAtTime(0, t + sec); });
+  setTimeout(() => {
+    act.forEach((d) => { d.audio.pause(); const g = d.fader.gain, n = ctx.currentTime; g.cancelScheduledValues(n); g.setValueAtTime(0, n); applyFader(d); updatePlayBtn(d); });
+    fadeBusy = false; fading = false; $('#fadeBtn').classList.remove('on');
+  }, sec * 1000 + 80);
+};
+// ===== NOW-PLAYING: ipinapadala ang pamagat ng kanta sa server (best effort) =====
+let lastNP = '', npWarned = false;
+try { const sv = localStorage.getItem('jfm_np'); if (sv !== null) $('#o_np').value = sv; } catch {}
+$('#o_np').onchange = (e) => { try { localStorage.setItem('jfm_np', e.target.value); } catch {} };
+async function sendNowPlaying(title) {
+  if (!ws || !proc || $('#o_np').value !== '1' || !title || title === 'No track') return;
+  const C = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.CapacitorHttp; if (!C) return;
+  const c = getCfg(); let url, headers = {};
+  if (c.mode === 'icecast') {
+    const m = c.mount.startsWith('/') ? c.mount : '/' + c.mount;
+    url = 'http://' + c.host + ':' + c.port + '/admin/metadata?mode=updinfo&mount=' + encodeURIComponent(m) + '&song=' + encodeURIComponent(title);
+    headers.Authorization = 'Basic ' + b64(te(c.user + ':' + c.password));
+  } else {
+    url = 'http://' + c.host + ':' + (parseInt(c.port, 10) - 1) + '/admin.cgi?pass=' + encodeURIComponent(c.password) + '&mode=updinfo&song=' + encodeURIComponent(title);
+  }
+  try {
+    const r = await C.request({ url, method: 'GET', headers, connectTimeout: 5000, readTimeout: 5000 });
+    if (r && r.status >= 400 && !npWarned) { npWarned = true; toast('The server did not accept the now-playing title (HTTP ' + r.status + ').'); }
+  } catch { if (!npWarned) { npWarned = true; toast('Could not send the now-playing title to the server.'); } }
+}
+function npAnnounce() { const pd = decks.find((x) => !x.audio.paused); if (pd) { lastNP = $('#now' + pd.i).textContent.trim(); sendNowPlaying(lastNP); } }
+decks.forEach((d) => d.audio.addEventListener('playing', () => { const t = $('#now' + d.i).textContent.trim(); if (t !== lastNP) { lastNP = t; sendNowPlaying(t); } }));
+// ===== RECORDING NG SHOW (parehong mix ng stream) =====
+let rec = null, recChunks = [], recT0 = 0, recTick = 0;
+const recStamp = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + '-' + p(d.getHours()) + p(d.getMinutes()); };
+async function recSave(blob, ext) {
+  const name = 'JeianneFM-' + recStamp() + '.' + ext;
+  try {
+    const FS = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.Filesystem;
+    if (FS) {
+      const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = () => rej(r.error); r.readAsDataURL(blob); });
+      await FS.writeFile({ path: 'JeianneFM/' + name, data, directory: 'DOCUMENTS', recursive: true });
+      toast('Recording saved: Documents/JeianneFM/' + name); return;
+    }
+  } catch {}
+  try {
+    const file = new File([blob], name, { type: blob.type });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: name }); return; }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 60000);
+  toast('Recording ready: ' + name + ' (check Downloads)');
+}
+$('#recBtn').onclick = () => {
+  if (rec) { try { rec.stop(); } catch {} return; }
+  if (typeof MediaRecorder === 'undefined') { toast('Recording is not supported on this device.'); return; }
+  ctx.resume();
+  const mime = ['audio/webm;codecs=opus', 'audio/ogg;codecs=opus', 'audio/mp4', 'audio/webm'].find((m) => MediaRecorder.isTypeSupported(m)) || '';
+  try { rec = new MediaRecorder(dest.stream, mime ? { mimeType: mime, audioBitsPerSecond: 128000 } : undefined); } catch (e) { rec = null; toast('Could not start recording: ' + (e.message || e)); return; }
+  recChunks = []; const r = rec;
+  r.ondataavailable = (e) => { if (e.data && e.data.size) recChunks.push(e.data); };
+  r.onstop = () => {
+    clearInterval(recTick); rec = null; $('#recBtn').textContent = '⏺ REC'; $('#recBtn').classList.remove('on');
+    const type = r.mimeType || mime || 'audio/webm', blob = new Blob(recChunks, { type }); recChunks = [];
+    if (blob.size) recSave(blob, /mp4/.test(type) ? 'm4a' : /ogg/.test(type) ? 'ogg' : 'webm');
+  };
+  r.start(10000); recT0 = Date.now(); $('#recBtn').classList.add('on');
+  const upd = () => { $('#recBtn').textContent = '⏹ ' + fmt((Date.now() - recT0) / 1000); }; upd(); recTick = setInterval(upd, 1000);
+  toast('Recording started (same mix as the stream).');
+};
+// ===== PLAYLISTS: naka-save ang pangalan at ayos ng mga kanta; kapag ni-load, piliin muli ang mga file at ibabalik ang ayos =====
+const PLK = 'jfm_pl';
+const plLoad = () => { try { return JSON.parse(localStorage.getItem(PLK) || '[]'); } catch { return []; } };
+const plSaveAll = (a) => { try { localStorage.setItem(PLK, JSON.stringify(a.slice(0, 30))); } catch { toast('Could not save the playlist.'); } };
+const pm = document.createElement('div'); pm.className = 'modal'; pm.id = 'plModal'; pm.hidden = true;
+pm.innerHTML = '<div class="card sheet" role="dialog" aria-modal="true" aria-label="Playlists"><div class="sheethead"><b>Playlists</b><button id="closePl" aria-label="Close playlists" style="width:42px;height:42px;border-radius:50%;font-size:18px">✕</button></div>' +
+  '<div class="row"><button id="plSave0" style="height:44px">💾 Save Deck 1</button><button id="plSave1" style="height:44px">💾 Save Deck 2</button></div>' +
+  '<ul id="plList" style="max-height:260px"></ul><div class="hint">Tap D1 or D2 to load a saved playlist into that deck, then select the same audio files again. They will be put back in the saved order.</div>' +
+  '<button id="closePl2" style="width:100%;height:50px;margin-top:16px;background:var(--acc);border-color:var(--acc);color:#fff;font-size:13.5px">Done</button></div>';
+document.body.appendChild(pm);
+const plFile = document.createElement('input'); plFile.type = 'file'; plFile.accept = 'audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac'; plFile.multiple = true; plFile.hidden = true; document.body.appendChild(plFile);
+let plPending = null;
+function plRender() {
+  const ul = $('#plList'); ul.innerHTML = ''; const all = plLoad();
+  if (!all.length) { const li = document.createElement('li'); li.textContent = 'No saved playlists yet.'; ul.appendChild(li); return; }
+  all.forEach((p, k) => {
+    const li = document.createElement('li'), sp = document.createElement('span'); sp.textContent = p.n + ' (' + p.t.length + ')'; li.append(sp);
+    [0, 1].forEach((di) => { const b = document.createElement('button'); b.textContent = 'D' + (di + 1); b.style.cssText = 'flex:none;width:40px;height:30px;font-size:11px'; b.onclick = () => { plPending = { di, p }; plFile.click(); }; li.append(b); });
+    const x = document.createElement('b'); x.className = 'x'; x.textContent = '✕'; x.setAttribute('role', 'button'); x.tabIndex = 0; x.setAttribute('aria-label', 'Delete playlist');
+    x.onclick = () => { const a = plLoad(); a.splice(k, 1); plSaveAll(a); plRender(); }; li.append(x);
+    ul.appendChild(li);
+  });
+}
+[0, 1].forEach((di) => { $('#plSave' + di).onclick = () => {
+  const d = decks[di]; if (!d.list.length) { toast('Deck ' + (di + 1) + ' has no tracks to save.'); return; }
+  const a = plLoad(), nm = 'Deck ' + (di + 1) + ' · ' + new Date().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  a.unshift({ n: nm, t: d.list.map((f) => ({ n: f.name, s: f.size })) }); plSaveAll(a); plRender(); toast('Saved: ' + nm);
+}; });
+plFile.onchange = () => {
+  const files = [...plFile.files].filter(isAudio); plFile.value = ''; const pend = plPending; plPending = null;
+  if (!pend) return;
+  const pool = files.slice(), out = [], miss = [];
+  pend.p.t.forEach((e) => {
+    let i = pool.findIndex((f) => f.name === e.n && f.size === e.s); if (i < 0) i = pool.findIndex((f) => f.name === e.n);
+    if (i >= 0) out.push(pool.splice(i, 1)[0]); else miss.push(e.n);
+  });
+  if (!out.length) { toast('None of the saved tracks were in your selection. Select the same files again.'); return; }
+  addFiles(decks[pend.di], out, 'No audio files in your selection.');
+  showModal('#plModal', false);
+  toast('Loaded ' + out.length + ' of ' + pend.p.t.length + ' tracks into Deck ' + (pend.di + 1) + (miss.length ? '. Missing: ' + miss.slice(0, 3).join(', ') + (miss.length > 3 ? '…' : '') : ''));
+};
+$('#plBtn').onclick = () => { plRender(); showModal('#plModal', true); };
+$('#closePl').onclick = $('#closePl2').onclick = () => showModal('#plModal', false);
+// AUTO-RECONNECT setting
+try { const sv = localStorage.getItem('jfm_retry'); if (sv !== null) $('#o_retry').value = sv; } catch {}
+$('#o_retry').onchange = (e) => { try { localStorage.setItem('jfm_retry', e.target.value); } catch {} };
+// DEAD-AIR ALARM: beep (sa phone lang, hindi sa stream) + babala kapag walang tunog sa stream
+let daSec = 10, daSince = 0, daAlarm = false, daLast = 0;
+try { const sv = localStorage.getItem('jfm_da'); if (sv !== null && !isNaN(sv)) $('#deadAir').value = sv; } catch {}
+daSec = parseInt($('#deadAir').value, 10) || 0;
+$('#deadAir').onchange = (e) => { daSec = parseInt(e.target.value, 10) || 0; daSince = 0; daAlarm = false; try { localStorage.setItem('jfm_da', e.target.value); } catch {} };
+const daBuf = new Float32Array(analyser.fftSize);
+function beep() { try { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = 880; g.gain.value = 0.12; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + 0.25); } catch {} }
+setInterval(() => {
+  if (!ws || !proc || !daSec) { daSince = 0; daAlarm = false; return; }
+  analyser.getFloatTimeDomainData(daBuf);
+  let pk = 0; for (let i = 0; i < daBuf.length; i++) { const v = Math.abs(daBuf[i]); if (v > pk) pk = v; }
+  const now = performance.now();
+  if (pk > 0.002) { daSince = 0; daAlarm = false; return; }
+  if (!daSince) { daSince = now; return; }
+  if (now - daSince > daSec * 1000) {
+    daAlarm = true;
+    if (now - daLast > 4000) { daLast = now; beep(); toast('⚠ Dead air: no sound on the stream. Play a track or turn on the mic.'); try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch {} }
+  }
+}, 250);
+// PUSH-TO-TALK: kapag naka-ON, bukas lang ang mic habang hawak ang button
+const ptt = $('#pttBtn'); let pttOn = false, pttHeld = false;
+function pttApply() {
+  micIn.gain.setTargetAtTime(!pttOn || pttHeld ? 1 : 0, ctx.currentTime, 0.01);
+  ptt.classList.toggle('on', pttOn && pttHeld); ptt.textContent = pttHeld ? '🎙 ON AIR' : '🎙 HOLD TO TALK';
+}
+function setPttMode(v) { pttOn = v === '1'; ptt.hidden = !pttOn; pttHeld = false; pttApply(); try { localStorage.setItem('jfm_ptt', v); } catch {} }
+try { const sv = localStorage.getItem('jfm_ptt'); if (sv === '0' || sv === '1') $('#pttMode').value = sv; } catch {}
+setPttMode($('#pttMode').value); $('#pttMode').onchange = (e) => setPttMode(e.target.value);
+ptt.addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  if (!micStream) { toast('Turn on 🎤 MIC first'); return; }
+  ctx.resume(); pttHeld = true; try { ptt.setPointerCapture(e.pointerId); } catch {} pttApply();
+  try { navigator.vibrate && navigator.vibrate(10); } catch {}
+});
+const pttRel = () => { if (pttHeld) { pttHeld = false; pttApply(); } };
+['pointerup', 'pointercancel', 'lostpointercapture'].forEach((ev) => ptt.addEventListener(ev, pttRel));
+ptt.addEventListener('contextmenu', (e) => e.preventDefault());
+// LOUDNESS TARGET: sinusukat ang lakas ng stream (RMS, pagkatapos ng limiter) at dahan-dahang itinataas o ibinababa (max ±6 dB) papunta sa target
+const LT = { 0: null, 1: -20, 2: -17, 3: -14 };
+let ltTarget = null, ltDb = 0, ltPow = 0, ltTick = 0;
+function setLt(v) {
+  ltTarget = LT[v] === undefined ? null : LT[v]; ltPow = 0;
+  if (ltTarget === null) { ltDb = 0; autoLvl.gain.setTargetAtTime(1, ctx.currentTime, 0.3); $('#alv').textContent = 'off'; }
+  try { localStorage.setItem('jfm_lt', v); } catch {}
+}
+try { const sv = localStorage.getItem('jfm_lt'); if (sv !== null && LT[sv] !== undefined) $('#ltLvl').value = sv; } catch {}
+setLt($('#ltLvl').value); $('#ltLvl').onchange = (e) => setLt(e.target.value);
+const ltBuf = new Float32Array(analyser.fftSize);
+setInterval(() => {
+  if (ltTarget === null) return;
+  analyser.getFloatTimeDomainData(ltBuf);
+  let sum = 0; for (let i = 0; i < ltBuf.length; i++) sum += ltBuf[i] * ltBuf[i];
+  const inst = sum / ltBuf.length;
+  if (10 * Math.log10(inst + 1e-12) > -45) {                       // hindi pinapalakas ang katahimikan o ingay
+    ltPow = ltPow ? ltPow + (inst - ltPow) * 0.015 : inst;           // ~3s na pag-average
+    const err = ltTarget - 10 * Math.log10(ltPow + 1e-12);
+    ltDb = Math.max(-6, Math.min(6, ltDb + Math.max(-0.02, Math.min(0.02, err * 0.01))));   // max ~0.4 dB bawat segundo
+    autoLvl.gain.setTargetAtTime(Math.pow(10, ltDb / 20), ctx.currentTime, 0.1);
+  }
+  if (++ltTick % 10 === 0) $('#alv').textContent = (ltDb >= 0 ? '+' : '') + ltDb.toFixed(1) + ' dB';
+}, 50);
+// MASTER GLUE levels
+const GL = { 0: { thr: 0, ratio: 1, mk: 1 }, 1: { thr: -18, ratio: 2, mk: 1.1 }, 2: { thr: -22, ratio: 3, mk: 1.25 } };
+function setGlue(v) { const g = GL[v] || GL[0]; glue.threshold.value = g.thr; glue.ratio.value = g.ratio; glueMk.gain.setTargetAtTime(g.mk, ctx.currentTime, 0.05); try { localStorage.setItem('jfm_gl', v); } catch {} }
+try { const sv = localStorage.getItem('jfm_gl'); if (sv !== null && GL[sv] !== undefined) $('#glueLvl').value = sv; } catch {}
+setGlue($('#glueLvl').value); $('#glueLvl').onchange = (e) => setGlue(e.target.value);
+// VOICE REVERB: maliit na "studio room" para sa boses (stream lang, hindi sa monitor)
+const revSend = ctx.createGain(); revSend.gain.value = 0;
+const rev = ctx.createConvolver();
+{ const len = Math.floor(ctx.sampleRate * 1.3), ir = ctx.createBuffer(2, len, ctx.sampleRate);
+  for (let c = 0; c < 2; c++) { const d = ir.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+  rev.buffer = ir; }
+const revLP = ctx.createBiquadFilter(); revLP.type = 'lowpass'; revLP.frequency.value = 4500;
+micGain.connect(revSend); revSend.connect(rev); rev.connect(revLP); revLP.connect(master);
+const REV = { 0: 0, 1: 0.12, 2: 0.22, 3: 0.35 };
+function setRev(v) { revSend.gain.setTargetAtTime(REV[v] || 0, ctx.currentTime, 0.05); try { localStorage.setItem('jfm_rv', v); } catch {} }
+try { const sv = localStorage.getItem('jfm_rv'); if (sv !== null && REV[sv] !== undefined) $('#revLvl').value = sv; } catch {}
+setRev($('#revLvl').value); $('#revLvl').onchange = (e) => setRev(e.target.value);
+// ADJUSTABLE LOW-CUT
+try { const sv = parseInt(localStorage.getItem('jfm_lc'), 10); if (sv) { $('#lowCut').value = sv; lcHz = sv; } } catch {}
+micHP.frequency.value = nr ? lcHz : 10;
+$('#lowCut').onchange = (e) => { lcHz = parseInt(e.target.value, 10) || 90; micHP.frequency.value = nr ? lcHz : 10; try { localStorage.setItem('jfm_lc', lcHz); } catch {} };
 // DE-ESSER: sinusukat ang lakas ng 6.5kHz; kapag lumampas sa threshold, ibinababa ang band na iyon
 const DE = { 0: null, 1: { thr: -40, max: 4 }, 2: { thr: -37, max: 7 }, 3: { thr: -34, max: 10 } };
 let deCur = DE[1];
@@ -1081,9 +1435,15 @@ const mBuf = new Float32Array(512), cBuf = new Float32Array(micAn.fftSize);   //
 function peakOf(an, arr, el) {
   an.getFloatTimeDomainData(arr);
   let p = 0; for (let i = 0; i < arr.length; i++) { const v = Math.abs(arr[i]); if (v > p) p = v; }
-  el.style.height = (100 - Math.min(100, p * 100)) + '%';      // tinatakpan ng maitim na bahagi mula sa taas
+  el.style.height = (100 - Math.min(100, p * 100)) + '%'; return p;      // tinatakpan ng maitim na bahagi mula sa taas
 }
-(function loop() { peakOf(musicAn, mBuf, meterMusic); peakOf(micAn, cBuf, meterMic); requestAnimationFrame(loop); })();
+let clipUntil = 0, clipOn = false; const micLbl = $('#micLbl');      // CLIP INDICATOR: nagiging 🔴 ang mic icon kapag pumuputok ang boses (ibaba ang Mic Gain)
+(function loop() {
+  peakOf(musicAn, mBuf, meterMusic); const mp = peakOf(micAn, cBuf, meterMic), nc = performance.now();
+  if (mp >= 0.95) clipUntil = nc + 1500;
+  const cl = nc < clipUntil; if (cl !== clipOn) { clipOn = cl; micLbl.textContent = cl ? '🔴' : '🎤'; }
+  requestAnimationFrame(loop);
+})();
 
 // GO LIVE (APK: MP3 sa loob ng app + diretsong TCP sa Icecast/Shoutcast)
 const Tcp = window.Capacitor && Capacitor.registerPlugin ? Capacitor.registerPlugin('TcpSocket') : null;
@@ -1122,17 +1482,66 @@ function sendBytes(u) {
 }
 function stopLive(msg) {
   const was = ws; ws = null;
-  if (proc) { try { limiter.disconnect(proc); } catch {} proc.onaudioprocess = null; try { proc.disconnect(); } catch {} proc = null; }
+  if (!was) return;                  // tapos na ang cleanup (iwas dobleng retry)
+  if (proc) { try { limiter.disconnect(proc); } catch {} proc.onaudioprocess = null; try { proc.port.close(); } catch {} try { proc.disconnect(); } catch {} proc = null; }
   if (mut) { try { mut.disconnect(); } catch {} mut = null; }
-  enc = null; clearInterval(timer);
+  enc = null; encMain = null; if (encW) { try { encW.terminate(); } catch {} encW = null; }
+  clearInterval(timer);
   if (was && Tcp) Tcp.close().catch(() => {});
   if (wake) { wake.release().catch(() => {}); wake = null; }
   $('#liveBtn').textContent = '🔴\nGO LIVE';
   $('#liveBtn').classList.remove('live');
   setStatus(msg || 'Not live', false);
+  if (wantLive) scheduleRetry(msg);
 }
-async function goLive() {
-  if (ws) { stopLive('Broadcast ended'); return; }
+let encW = null, encMain = null, capReady = null;
+const CAP_CODE = "class P extends AudioWorkletProcessor{constructor(){super();this.n=0;this.l=new Float32Array(4096);this.r=new Float32Array(4096)}process(i){var c=i[0];if(c&&c[0]){var a=c[0],b=c[1]||c[0];this.l.set(a,this.n);this.r.set(b,this.n);this.n+=a.length;if(this.n>=4096){this.port.postMessage({l:this.l,r:this.r},[this.l.buffer,this.r.buffer]);this.l=new Float32Array(4096);this.r=new Float32Array(4096);this.n=0}}return true}}registerProcessor('jfm-cap',P)";
+async function startEncoder(br) {         // MP3 encoder sa Web Worker (hindi na bumibigat ang main thread); kapag hindi gumana, babalik sa dating paraan
+  encMain = null;
+  try {
+    const code = 'importScripts(' + JSON.stringify(new URL('lame.min.js', location.href).href) + ');var e;onmessage=function(m){var d=m.data;if(d.init){try{e=new lamejs.Mp3Encoder(2,d.sr,d.br);postMessage("ready")}catch(x){postMessage("fail")}return}if(!e)return;var o=e.encodeBuffer(d.l,d.r);if(o.length)postMessage(o)}';
+    const w = new Worker(URL.createObjectURL(new Blob([code], { type: 'application/javascript' })));
+    const ok = await new Promise((res) => {
+      const t = setTimeout(() => res(false), 2500);
+      w.onmessage = (m) => { if (m.data === 'ready') { clearTimeout(t); res(true); } else if (m.data === 'fail') { clearTimeout(t); res(false); } };
+      w.onerror = () => { clearTimeout(t); res(false); };
+      w.postMessage({ init: true, sr: ctx.sampleRate, br });
+    });
+    if (ok) { w.onerror = null; w.onmessage = (m) => sendBytes(m.data); encW = w; return; }
+    w.terminate();
+  } catch {}
+  encMain = new lamejs.Mp3Encoder(2, ctx.sampleRate, br);
+}
+async function startCapture(onBlock) {    // AudioWorklet (mas matatag); kapag hindi suportado, ScriptProcessor
+  const mute = mut = ctx.createGain(); mute.gain.value = 0; mute.connect(ctx.destination);
+  try {
+    if (!ctx.audioWorklet) throw 0;
+    if (!capReady) capReady = ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([CAP_CODE], { type: 'application/javascript' })));
+    await capReady;
+    const n = new AudioWorkletNode(ctx, 'jfm-cap', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit' });
+    n.port.onmessage = (e) => onBlock(e.data.l, e.data.r);
+    limiter.connect(n); n.connect(mute); return n;
+  } catch { capReady = null; }
+  const n = ctx.createScriptProcessor(4096, 2, 2);
+  n.onaudioprocess = (e) => onBlock(e.inputBuffer.getChannelData(0), e.inputBuffer.getChannelData(1));
+  limiter.connect(n); n.connect(mute); return n;
+}
+let wantLive = false, retryT = 0, retryN = 0;
+function scheduleRetry(msg) {            // AUTO-RECONNECT: kusang babalik ang stream kapag naputol (hindi kapag mali ang password)
+  if ($('#o_retry').value !== '1') { wantLive = false; return; }
+  if (++retryN > 40) { wantLive = false; retryN = 0; setStatus('Gave up reconnecting: ' + (msg || ''), false); return; }
+  const sec = Math.min(15, 2 + retryN * 2);
+  $('#liveBtn').textContent = '■\nCANCEL'; $('#liveBtn').classList.add('live');
+  setStatus('⚠ ' + (msg || 'Disconnected') + ' · reconnecting in ' + sec + 's (try ' + retryN + ')', true);
+  clearTimeout(retryT); retryT = setTimeout(() => goLive(true), sec * 1000);
+}
+async function goLive(isRetry) {
+  if (isRetry !== true && (ws || wantLive)) {          // pinindot ng user ang END / CANCEL
+    wantLive = false; clearTimeout(retryT); retryT = 0; retryN = 0;
+    if (ws) stopLive('Broadcast ended');
+    else { $('#liveBtn').textContent = '🔴\nGO LIVE'; $('#liveBtn').classList.remove('live'); setStatus('Broadcast ended', false); }
+    return;
+  }
   const c = getCfg(), miss = [];
   if (!c.host) miss.push('Server/Host');
   if (!c.port || isNaN(c.port) || +c.port < 1 || +c.port > 65535) miss.push('Port');
@@ -1142,9 +1551,10 @@ async function goLive() {
   if (miss.length) { showSettings(true); setStatus('Missing: ' + miss.join(', '), false); return; }
   if (!Tcp) { setStatus('This only works in the APK app, not in a browser', false); return; }
   if (!window.lamejs) { setStatus('lame.min.js (MP3 encoder) is missing', false); return; }
-  if (!micStream && !confirm('Your mic is OFF. Go live without your voice anyway?')) { setStatus('Turn on 🎤 MIC first', false); return; }
+  if (isRetry !== true && !micStream && !confirm('Your mic is OFF. Go live without your voice anyway?')) { setStatus('Turn on 🎤 MIC first', false); return; }
+  wantLive = true;
   await ctx.resume();
-  setStatus('Connecting...', false);
+  setStatus(isRetry === true ? 'Reconnecting...' : 'Connecting...', false);
   ws = {}; q = Promise.resolve(); pending = 0; dropped = 0;
   const br = parseInt(c.bitrate, 10) || 128;
   try {
@@ -1152,7 +1562,7 @@ async function goLive() {
     const rd = async (ms) => (await Tcp.read({ timeoutMs: ms })).text || '';
     if (c.mode === 'shoutcast') {
       await Tcp.write({ data: b64(te(c.password + '\r\n')) });
-      if (!/OK2/i.test(await rd(8000))) throw new Error('Wrong Shoutcast password or port');
+      if (!/OK2/i.test(await rd(8000))) throw Object.assign(new Error('Wrong Shoutcast password or port'), { fatal: true });
       await Tcp.write({ data: b64(te('icy-name: JEIANNE FM\r\nicy-pub: 1\r\nicy-br: ' + br + '\r\ncontent-type: audio/mpeg\r\n\r\n')) });
     } else {
       const mount = c.mount.startsWith('/') ? c.mount : '/' + c.mount;
@@ -1160,25 +1570,29 @@ async function goLive() {
       await Tcp.write({ data: b64(te('PUT ' + mount + ' HTTP/1.1\r\nHost: ' + c.host + ':' + c.port + '\r\nAuthorization: Basic ' + auth +
         '\r\nUser-Agent: JeianneFM\r\nContent-Type: audio/mpeg\r\nIce-Name: JEIANNE FM\r\nIce-Public: 1\r\nIce-Bitrate: ' + br + '\r\n\r\n')) });
       const r = await rd(8000);
-      if (!/^HTTP\/1\.\d (100|200)/.test(r)) throw new Error('Rejected by Icecast: ' + (r.split('\r\n')[0] || 'no response'));
+      if (!/^HTTP\/1\.\d (100|200)/.test(r)) { const fl = r.split('\r\n')[0]; throw Object.assign(new Error('Rejected by Icecast: ' + (fl || 'no response')), { fatal: / 401\b/.test(fl) }); }
     }
     if (!ws) return;
-    enc = new lamejs.Mp3Encoder(2, ctx.sampleRate, br);
-    proc = ctx.createScriptProcessor(4096, 2, 2);
-    const mute = mut = ctx.createGain(); mute.gain.value = 0;
-    limiter.connect(proc); proc.connect(mute); mute.connect(ctx.destination);
-    proc.onaudioprocess = (e) => {
-      if (!enc) return;
-      const out = enc.encodeBuffer(toI16(e.inputBuffer.getChannelData(0)), toI16(e.inputBuffer.getChannelData(1)));
+    await startEncoder(br);
+    if (!ws) { if (encW) { try { encW.terminate(); } catch {} encW = null; } return; }
+    enc = true;
+    const node = await startCapture((l, r) => {
+      if (!ws) return;
+      const ia = toI16(l), ib = toI16(r);
+      if (encW) { encW.postMessage({ l: ia, r: ib }, [ia.buffer, ib.buffer]); return; }
+      if (!encMain) return;
+      const out = encMain.encodeBuffer(ia, ib);
       if (out.length) sendBytes(out);
-    };
-    liveSince = Date.now();
+    });
+    if (!ws) { try { limiter.disconnect(node); } catch {} try { node.disconnect(); } catch {} if (mut) { try { mut.disconnect(); } catch {} mut = null; } if (encW) { try { encW.terminate(); } catch {} encW = null; } return; }
+    proc = node;
+    liveSince = (isRetry === true && liveSince) ? liveSince : Date.now(); retryN = 0; daSince = 0; daAlarm = false; setTimeout(npAnnounce, 1500);
     $('#liveBtn').textContent = '■\nEND LIVE';
     $('#liveBtn').classList.add('live');
-    timer = setInterval(() => setStatus('🔴 LIVE  ' + fmt((Date.now() - liveSince) / 1000) + (dropped ? '  ⚠' + dropped : ''), true), 1000);
+    timer = setInterval(() => setStatus('🔴 LIVE  ' + fmt((Date.now() - liveSince) / 1000) + (dropped ? '  ⚠' + dropped : '') + (daAlarm ? '  ⚠ DEAD AIR' : ''), true), 1000);
     setStatus('🔴 LIVE', true);
     if (navigator.wakeLock) navigator.wakeLock.request('screen').then((w) => (wake = w)).catch(() => {});
-  } catch (e) { stopLive(e.message || String(e)); }
+  } catch (e) { if (e && e.fatal) wantLive = false; stopLive(e.message || String(e)); }
 }
 
 function getCfg() {
