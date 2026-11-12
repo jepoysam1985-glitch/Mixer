@@ -701,26 +701,27 @@ setInterval(() => {
 
 // AUTO-DUCK: bumababa ang kanta kapag may boses sa mic, bumabalik kapag tahimik na
 let duckLevel = 0.25, voiceUntil = 0, lastWant = 1, duckOn = false;
-$('#duckBtn').onclick = () => {
-  duckOn = !duckOn;
-  $('#duckBtn').textContent = '🔉\nAuto-duck\n' + (duckOn ? 'ON' : 'OFF');
-  $('#duckBtn').classList.toggle('on', duckOn);
-};
+$('#duckBtn').onclick = () => { duckOn = !duckOn; $('#duckBtn').classList.toggle('on', duckOn); };
 $('#duckLvl').oninput = (e) => { duckLevel = e.target.value / 100; $('#duckv').textContent = e.target.value + '%'; };
-const micBuf = new Float32Array(micAn.fftSize);
+const micBuf = new Float32Array(gateAn.fftSize);
+let duckFloor = 0.01, lastDuckTxt = '';
+function duckLabel(t) { if (t !== lastDuckTxt) { lastDuckTxt = t; $('#duckBtn').textContent = '🔉\nAuto-duck\n' + t; } }
 setInterval(() => {
   let want = 1;
   if (micStream && duckOn) {
-    micAn.getFloatTimeDomainData(micBuf);
+    gateAn.getFloatTimeDomainData(micBuf);        // bago ang gate at Mic Gain: hindi apektado ng mga setting na iyon
     let sum = 0; for (let i = 0; i < micBuf.length; i++) sum += micBuf[i] * micBuf[i];
     const rms = Math.sqrt(sum / micBuf.length), now = performance.now();
-    if (rms > (now < voiceUntil ? 0.008 : 0.02)) voiceUntil = now + 900;   // hysteresis + 0.9s hold para hindi putol-putol
+    duckFloor = rms < duckFloor ? rms : duckFloor + (rms - duckFloor) * 0.002;   // sinusundan ang ingay sa paligid, kaya gumagana kahit mahina ang mic
+    const hi = Math.max(0.006, duckFloor * 2.5), lo = Math.max(0.004, duckFloor * 1.6);
+    if (rms > (now < voiceUntil ? lo : hi)) voiceUntil = now + 900;   // hysteresis + 0.9s hold para hindi putol-putol
     if (now < voiceUntil) want = duckLevel;
   }
   if (want !== lastWant) {
     duckGain.gain.setTargetAtTime(want, ctx.currentTime, want < lastWant ? 0.05 : 0.45);   // mabilis bumaba, dahan-dahang bumalik
     lastWant = want;
   }
+  duckLabel(!duckOn ? 'OFF' : !micStream ? 'NEED MIC' : want < 1 ? 'DUCKING' : 'ON');
 }, 50);
 let mon = true;
 $('#monBtn').onclick = () => {
