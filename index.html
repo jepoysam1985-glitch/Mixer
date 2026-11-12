@@ -342,12 +342,9 @@ MIC
 OFF</button>
     <button class="big" id="liveBtn">🔴
 GO LIVE</button>
-    <button id="monBtn">🔈
+    <button id="monBtn">🎧
 Monitor
 ON</button>
-    <button id="micMonBtn">🎧
-Hear Mic
-OFF</button>
   </div>
   <div id="status">Not live</div>
 </div>
@@ -402,8 +399,7 @@ micGain.connect(echoDelay); echoDelay.connect(echoTone);
 echoTone.connect(echoFb); echoFb.connect(echoDelay);
 echoTone.connect(echoWet); echoWet.connect(master);
 // PAKINGGAN ANG MIC (boses + echo) sa headphone/Bluetooth; hindi ito kasama sa stream, pang-monitor lang
-const micMon = ctx.createGain(); micMon.gain.value = 0;
-micGain.connect(micMon); echoWet.connect(micMon); micMon.connect(ctx.destination);
+micGain.connect(monitor); echoWet.connect(monitor);   // MONITOR = kanta + effects + boses mo (may echo) sa phone/Bluetooth; hindi kasama sa stream
 // pang-detect ng boses para sa auto-duck
 const micAn = ctx.createAnalyser(); micAn.fftSize = 1024;
 micGain.connect(micAn);
@@ -645,7 +641,6 @@ async function toggleMic() {
     micStream.getTracks().forEach((t) => t.stop());
     micSrc.disconnect(); micStream = null; micSrc = null;
     btn.textContent = '🎤\nMIC\nOFF'; btn.classList.remove('on');
-    micMonLabel();
     return;
   }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -672,7 +667,6 @@ async function toggleMic() {
   micSrc = ctx.createMediaStreamSource(micStream);
   micSrc.connect(micIn);
   btn.textContent = '🎤\nMIC\nON'; btn.classList.add('on');
-  micMonLabel();
 }
 $('#micBtn').onclick = toggleMic;
 
@@ -733,20 +727,9 @@ let mon = true;
 $('#monBtn').onclick = () => {
   mon = !mon;
   monitor.gain.value = mon ? 1 : 0;
-  $('#monBtn').textContent = '🔈\nMonitor\n' + (mon ? 'ON' : 'OFF');
+  $('#monBtn').textContent = '🎧\nMonitor\n' + (mon ? 'ON' : 'OFF');
 };
 
-let micMonOn = false;
-function micMonLabel() {
-  $('#micMonBtn').textContent = '🎧\nHear Mic\n' + (micMonOn ? (micStream ? 'ON' : 'NEED MIC') : 'OFF');
-  $('#micMonBtn').classList.toggle('on', micMonOn);
-}
-function beep() {                         // "pip" na sa headphone lang maririnig: patunay na gumagana ang output (Bluetooth)
-  const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
-  o.frequency.value = 880; g.gain.setValueAtTime(0, t);
-  g.gain.linearRampToValueAtTime(0.25, t + 0.02); g.gain.linearRampToValueAtTime(0, t + 0.35);
-  o.connect(g); g.connect(micMon); o.start(t); o.stop(t + 0.4);
-}
 async function reopenMic() {              // habang nagmo-monitor, patay ang echo-cancel/noise-suppress ng phone (kinakain nito ang boses sa loop)
   if (!micStream) return;
   micStream.getTracks().forEach((t) => t.stop());
@@ -760,15 +743,6 @@ async function reopenMic() {              // habang nagmo-monitor, patay ang ech
     toast('Could not reopen the mic: ' + (e.message || e));
   }
 }
-$('#micMonBtn').onclick = async () => {
-  ctx.resume();
-  micMonOn = !micMonOn;
-  micMon.gain.value = micMonOn ? 1 : 0;
-  if (micMonOn) beep();
-  micMonLabel();
-  await reopenMic();
-  micMonLabel();
-};
 
 // EFFECTS: 12 slot ng jingle/sound effect (kasama sa stream; naka-save sa IndexedDB ng phone)
 const FX_N = 12;
