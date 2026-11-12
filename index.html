@@ -255,6 +255,11 @@ button{touch-action:manipulation;user-select:none;-webkit-user-select:none}
     <option value="2" selected>Medium</option>
     <option value="3">High (strong)</option>
   </select>
+  <label for="micAec">Phone echo-cancel (mic)</label>
+  <select id="micAec">
+    <option value="0" selected>Off (recommended: voice works while music plays)</option>
+    <option value="1">On (only if using the phone speaker)</option>
+  </select>
   <label>Mic Echo: <b id="echov">25%</b></label>
   <input type="range" min="0" max="100" value="25" id="echoAmt">
   <select id="echoTime" style="margin-top:6px">
@@ -630,6 +635,9 @@ $('#mixSec').onchange = () => { mixSec = parseInt($('#mixSec').value, 10) || 5; 
 
 // MIC
 let micStream = null, micSrc = null;
+// Ang echo-cancel ng phone ang pumapatay sa boses habang tumutugtog ang music, kaya naka-OFF ito bilang default (may sarili nang noise gate)
+const micConstraints = () => ({ audio: { echoCancellation: $('#micAec').value === '1', noiseSuppression: false, autoGainControl: false } });
+$('#micAec').onchange = () => { if (micStream) reopenMic(); };
 async function toggleMic() {
   ctx.resume();
   const btn = $('#micBtn');
@@ -646,9 +654,7 @@ async function toggleMic() {
   }
   try {
     try {
-      micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: !micMonOn, noiseSuppression: !micMonOn, autoGainControl: false },
-      });
+      micStream = await navigator.mediaDevices.getUserMedia(micConstraints());
     } catch (e1) {
       if (e1.name === 'NotAllowedError' || e1.name === 'SecurityError' || e1.name === 'NotFoundError') throw e1;
       micStream = await navigator.mediaDevices.getUserMedia({ audio: true });   // simpleng settings
@@ -747,7 +753,7 @@ async function reopenMic() {              // habang nagmo-monitor, patay ang ech
   try { micSrc.disconnect(); } catch {}
   micStream = null; micSrc = null;
   try {
-    micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !micMonOn, noiseSuppression: !micMonOn, autoGainControl: false } });
+    micStream = await navigator.mediaDevices.getUserMedia(micConstraints());
     micSrc = ctx.createMediaStreamSource(micStream); micSrc.connect(micIn);
   } catch (e) {
     $('#micBtn').textContent = '🎤\nMIC\nOFF'; $('#micBtn').classList.remove('on');
