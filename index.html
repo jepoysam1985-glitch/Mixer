@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tl">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -7,37 +7,46 @@
 <title>JEIANNE FM Mixer</title>
 <script src="lame.min.js"></script>
 <style>
-:root{--bg:#0a0a12;--panel:#13131f;--panel2:#1b1b2c;--line:#272742;--txt:#f1f1f8;--dim:#8b8ba7;--c1:#22d3ee;--c2:#f472b6;--acc:#8b5cf6;--live:#ff3355;--ok:#22c55e}
+:root{--bg:#0a0a12;--panel:#13131f;--panel2:#1b1b2c;--line:#272742;--txt:#f1f1f8;--dim:#c9c9e2;--c1:#22d3ee;--c2:#f472b6;--acc:#8b5cf6;--live:#ff3355;--ok:#22c55e}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html{background:var(--bg)}
 body{margin:0 auto;max-width:640px;padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));overflow-x:hidden;color:var(--txt);font-family:system-ui,-apple-system,sans-serif;background:radial-gradient(120% 50% at 50% -8%,#2a1d56 0%,transparent 70%)}
-h1{font-size:17px;letter-spacing:3px;text-align:center;margin:6px 0 14px;font-weight:800;background:linear-gradient(90deg,var(--c1),var(--acc),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+h1{font-size:15px;letter-spacing:3px;text-align:center;margin:6px 0 14px;font-weight:800;background:linear-gradient(90deg,var(--c1),var(--acc),var(--c2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.topbar{display:flex;align-items:center;gap:8px;margin:2px 0 12px}
+.topbar h1{flex:1;margin:0}
+#gearBtn,#mixBtn{flex:none;width:44px;height:44px;border-radius:50%;font-size:20px;padding:0;line-height:1}
+.modal{position:fixed;inset:0;z-index:100;background:#000c;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
+.modal[hidden]{display:none}
+.sheet{width:100%;max-width:520px;margin:auto 0;box-shadow:0 10px 40px #000}
+.sheethead{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sheethead b{font-size:14px}
+#closeSettings,#closeMix{flex:none;width:42px;height:42px;border-radius:50%;font-size:18px}
 .card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:12px;box-shadow:0 6px 24px #0008}
-.decks{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;margin-bottom:12px}
+.decks{display:grid;grid-template-columns:minmax(0,1fr) 104px minmax(0,1fr);gap:5px;margin-bottom:12px}
 .decks .card{margin:0}
 #deck0{--c:var(--c1)}#deck1{--c:var(--c2)}
 .deck{border-top:3px solid var(--c)}
-.deck h2{font-size:12px;letter-spacing:2px;margin:0 0 8px;color:var(--c)}
-.now{font-size:13px;font-weight:600;line-height:1.3;min-height:56px;background:#0b0b14;border-left:3px solid var(--c);border-radius:10px;padding:8px 10px;overflow:hidden;word-break:break-word;display:flex;align-items:center}
-.time{font-size:11px;color:var(--dim);margin:6px 2px 0;font-variant-numeric:tabular-nums}
+.deck h2{font-size:12px;font-weight:800;letter-spacing:2px;margin:0 0 8px;color:var(--c)}
+.now{font-size:13px;font-weight:700;line-height:1.3;min-height:42px;background:#0b0b14;border-left:3px solid var(--c);border-radius:10px;padding:8px 10px;overflow:hidden;word-break:break-word;display:flex;align-items:center}
+.time{font-size:11.5px;color:var(--dim);margin:6px 2px 0;font-variant-numeric:tabular-nums}
 .btns{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:8px 0}
-button{background:#232338;color:var(--txt);border:1px solid #33334f;border-radius:12px;padding:0;height:42px;font-size:11px;font-weight:700;letter-spacing:.4px;transition:transform .08s,background .15s}
+button{background:#232338;color:var(--txt);border:1px solid #33334f;border-radius:12px;padding:0;height:44px;font-size:11.5px;font-weight:700;letter-spacing:.3px;transition:transform .08s,background .15s}
 button:active{transform:scale(.95);background:#33334f}
 button.on{background:var(--acc);border-color:var(--acc);color:#fff;box-shadow:0 0 14px #8b5cf688}
 .deck button.on{background:var(--c);border-color:var(--c);color:#06060c;box-shadow:0 0 14px var(--c)}
 .addrow{display:grid;grid-template-columns:1fr;gap:5px;margin-top:6px}
 .addrow button{height:38px;background:transparent;border-style:dashed}
 .deck.locked .btns button:not(.lockbtn),.deck.locked .addrow,.deck.locked ul{opacity:.4;pointer-events:none}
-ul{list-style:none;margin:8px 0 0;padding:0;max-height:140px;overflow:auto;font-size:12px}
-li{padding:8px;border-radius:9px;margin-bottom:3px;background:#0f0f19;color:#c4c4dc;word-break:break-word}
+ul{list-style:none;margin:8px 0 0;padding:0;max-height:150px;overflow:auto;font-size:12.5px}
+li{padding:8px;border-radius:9px;margin-bottom:3px;background:#0f0f19;color:#ececf8;word-break:break-word}
 li.cur{background:#26264a;color:#fff;border-left:3px solid var(--c)}
 li{display:flex;align-items:center;gap:6px}
 li span{flex:1;min-width:0}
-li .x{flex:none;min-width:34px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#2a1b24;color:#ff7b8f;font-size:13px}
+li .x{flex:none;min-width:34px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:8px;background:#2a1b24;color:#ff7b8f;font-size:12px}
 li .x:active{background:#4a2232}
-label{display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--dim);margin:12px 0 6px}
+label{display:block;font-size:11px;font-weight:600;letter-spacing:.8px;text-transform:uppercase;color:#d9d9f0;margin:14px 0 6px}
 label b{color:var(--txt)}
-.chk{display:flex;align-items:center;gap:10px;font-size:13px;text-transform:none;letter-spacing:0;color:var(--txt);margin-top:14px}
+.chk{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--txt);margin-top:14px}
 .chk input{width:20px;height:20px;accent-color:var(--acc)}
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:10px;border-radius:99px;outline:none;margin:6px 0;--v:50%;--cc:var(--acc);background:linear-gradient(90deg,var(--cc) var(--v),#2a2a44 var(--v))}
 .deck input[type=range]{--cc:var(--c)}
@@ -46,58 +55,89 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;heigh
 #cross::-webkit-slider-thumb{background:#14141f;border-color:#fff}
 .row{display:flex;gap:8px;align-items:center;margin-top:10px}.row>*{flex:1}
 #autoBtn,#mixSec{height:46px}
-#micBtn,#monBtn{height:52px;font-size:13px}
+#duckBtn,#micBtn,#monBtn,#micMonBtn{height:60px;font-size:10.5px;line-height:1.2;white-space:pre-line;padding:0 2px;min-width:0}
+#micMonBtn.on{background:var(--acc);border-color:var(--acc);color:#fff}
 #micBtn.on{background:var(--ok);border-color:var(--ok);color:#04130a;box-shadow:0 0 16px #22c55e88}
 .meter{height:14px;background:#0b0b14;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin-top:14px}
 .meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--ok),#e5c82d 70%,var(--live))}
-input[type=text],input[type=password],input[type=number],select{width:100%;padding:12px;border-radius:12px;border:1px solid #33334f;background:#0c0c16;color:var(--txt);font-size:16px}
+::placeholder{color:#9a9ab8;opacity:1}
+input[type=text],input[type=password],input[type=number],select{width:100%;padding:12px;border-radius:12px;border:1px solid #33334f;background:#0c0c16;color:var(--txt);font-size:14px}
 input:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px #8b5cf655}
 summary{font-weight:700;font-size:14px;padding:6px 0}
-.hint{font-size:11px;color:var(--dim);line-height:1.5;margin-top:10px}
-.card:has(#liveBtn){position:sticky;bottom:max(8px,env(safe-area-inset-bottom));z-index:5;background:#0f0f1a;border-color:#3a3a5c;box-shadow:0 -10px 30px #000d;margin-bottom:0}
-button.big{width:100%;height:60px;font-size:17px;letter-spacing:1px;border:0;border-radius:16px;color:#fff;background:linear-gradient(135deg,#ff3355,#ff6a3d);box-shadow:0 6px 20px #ff335566}
+.hint{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:10px}
+.card:has(#liveBtn){position:sticky;bottom:max(8px,env(safe-area-inset-bottom));z-index:5;background:#0f0f1a;border-color:#3a3a5c;box-shadow:0 -10px 30px #000d;margin-bottom:12px}
+button.big{width:100%;height:60px;font-size:15px;letter-spacing:1px;border:0;border-radius:16px;color:#fff;background:linear-gradient(135deg,#ff3355,#ff6a3d);box-shadow:0 6px 20px #ff335566}
 button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pulse 1.6s infinite}
 @keyframes pulse{0%,100%{box-shadow:0 0 0 0 #ff335599}50%{box-shadow:0 0 0 12px #ff335500}}
 #status{font-size:13px;text-align:center;margin-top:10px;color:var(--dim);min-height:18px;font-variant-numeric:tabular-nums}
 #status.live{color:#ff6b81;font-weight:800}
 .spec{display:block;width:100%;height:48px;margin:8px 0 2px;background:#0b0b14;border-radius:10px}
+/* EFFECTS pads: bilog, iba-iba ang kulay */
+.fxgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 4px}
+.fxcell{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.pad{position:relative;width:100%;max-width:50px;height:auto;aspect-ratio:1/1;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#0b0b14;background:var(--pc);border:2px solid var(--pc);box-shadow:inset 0 -6px 9px #0004,inset 0 4px 6px #fff5,0 3px 9px #0009}
+.pad.empty{background:transparent;border:2px dashed var(--pc);color:var(--pc);box-shadow:none;opacity:.75;font-size:18px;font-weight:400}
+.pad.on{background:#fff;border-color:var(--pc);transform:scale(1.08);box-shadow:0 0 0 3px var(--pc),0 0 18px var(--pc);color:#0b0b14}
+.pad:active{transform:scale(.93)}
+.pad .x{position:absolute;top:-4px;right:-4px;width:20px;height:20px;border-radius:50%;background:#4a2232;color:#ff7b8f;border:2px solid #0f0f1a;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.cap{font-size:10px;font-weight:600;line-height:1.2;color:#ececf8;text-align:center;max-width:100%;min-height:24px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word}
 @media (max-width:420px){
   body{padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right))}
-  h1{font-size:15px;letter-spacing:2px;margin:2px 0 10px}
+  h1{font-size:13.5px;letter-spacing:1.5px;margin:2px 0 10px}
+  .topbar h1{margin:0}
   .card{padding:9px;border-radius:14px;margin-bottom:10px}
-  .decks{gap:7px;margin-bottom:10px}
-  .deck h2{font-size:11px;margin-bottom:6px}
-  .now{font-size:12px;min-height:44px;padding:6px 8px}
+  .decks{gap:4px;margin-bottom:10px}
+  .deck .btns button,.addrow button{font-size:11px}
+  .deck h2{font-size:11.5px;margin-bottom:6px}
+  .now{font-size:12.5px;min-height:42px;padding:6px 8px}
   .btns{grid-template-columns:1fr 1fr;gap:5px;margin:6px 0}
-  button{height:38px;font-size:11px}
-  .addrow button{height:36px;font-size:10px}
-  ul{max-height:100px;font-size:11px}
+  button{height:40px;font-size:11.5px}
+  .addrow button{height:40px;font-size:11.5px}
+  ul{max-height:110px;font-size:12px}
   li{padding:7px}
   .spec{height:38px}
-  #micBtn,#monBtn{font-size:12px;height:48px}
-  #autoBtn{font-size:10px;padding:0 4px}
-  button.big{height:54px;font-size:16px}
-  .hint{font-size:10.5px}
+  #duckBtn,#micBtn,#monBtn,#micMonBtn{font-size:10.5px;height:60px}
+  #autoBtn{font-size:11px;padding:0 4px}
+  button.big{height:54px;font-size:14.5px}
+  .hint{font-size:11px}
 }
+@media (max-width:340px){h1{font-size:12px;letter-spacing:1px}#duckBtn,#micBtn,#monBtn,#micMonBtn,#liveBtn{font-size:9.5px}}
+.card.vgain{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:4px;padding:10px 2px}
+.vcol{display:flex;flex-direction:column;align-items:center;gap:6px;width:48px}
+.vl{font-size:10px;font-weight:700;line-height:1.2;color:#d9d9f0;text-transform:uppercase;text-align:center}
+.vslot{height:22px;display:flex;align-items:center;justify-content:center}
+.vslide{position:relative;width:40px;height:210px}
+.vslide input{position:absolute;left:50%;top:50%;width:210px;margin:0;transform:translate(-50%,-50%) rotate(-90deg)}
+.vslide input.vcross{transform:translate(-50%,-50%) rotate(90deg)}   /* 0 = Deck 1 (taas), 100 = Deck 2 (baba) */
+.vdb{font-size:10px;color:var(--txt);font-variant-numeric:tabular-nums;white-space:nowrap}
+.vtag{width:22px;height:22px;border-radius:50%;font-style:normal;font-size:11px;font-weight:800;color:#06060c;display:flex;align-items:center;justify-content:center}
+.mqw{flex:1;min-width:0;overflow:hidden;white-space:nowrap}
+.mq{display:inline-block;will-change:transform}
+.mq.run{animation:mq var(--dur,8s) ease-in-out infinite alternate}
+@keyframes mq{0%,14%{transform:translateX(0)}86%,100%{transform:translateX(var(--dist,0px))}}
+@media (prefers-reduced-motion:reduce){.mq.run{animation:none}}
+#liveBtn{flex:1.4;width:auto;height:60px;font-size:11.5px;letter-spacing:.3px;line-height:1.2;white-space:pre-line;padding:0 2px;border-radius:12px;min-width:0}
+#status{margin-top:8px}
 </style>
 </head>
 <body>
-<h1>🎙 JEIANNE FM MIXER</h1>
+<div class="topbar"><button id="mixBtn" aria-label="Open audio settings">🎚</button><h1>🎙 JEIANNE FM MIXER</h1><button id="gearBtn" aria-label="Open output settings">⚙</button></div>
 
-<details class="card" id="out">
-  <summary>⚙ Output Settings (Encoder)</summary>
+<div class="modal" id="out" hidden>
+<div class="card sheet" role="dialog" aria-label="Output Settings">
+  <div class="sheethead"><b>Output Settings (Encoder)</b><button id="closeSettings" aria-label="Close settings">✕</button></div>
   <label for="o_mode">Output mode</label>
   <select id="o_mode">
     <option value="icecast">Icecast Server</option>
     <option value="shoutcast">Shoutcast Server (v1)</option>
   </select>
   <label for="o_host">Server / Host</label>
-  <input type="text" id="o_host" placeholder="hal. stream-xx.zeno.fm" autocapitalize="off" autocomplete="off" spellcheck="false">
+  <input type="text" id="o_host" placeholder="e.g. stream-xx.zeno.fm" autocapitalize="off" autocomplete="off" spellcheck="false">
   <label for="o_port">Port</label>
-  <input type="number" id="o_port" inputmode="numeric" placeholder="hal. 8000">
+  <input type="number" id="o_port" inputmode="numeric" placeholder="e.g. 8000">
   <div id="o_mountbox">
     <label for="o_mount">Mount point</label>
-    <input type="text" id="o_mount" placeholder="hal. /abc123" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <input type="text" id="o_mount" placeholder="e.g. /abc123" autocapitalize="off" autocomplete="off" spellcheck="false">
     <label for="o_user">Username</label>
     <input type="text" id="o_user" value="source" autocapitalize="off" autocomplete="off" spellcheck="false">
   </div>
@@ -110,42 +150,84 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
     <option value="128k" selected>128 kbps</option>
     <option value="192k">192 kbps</option>
   </select>
-  <div class="hint">Naka-save lang sa phone mong ito at ginagamit kapag nag-Go Live (diretso sa server, walang relay). Para sa Shoutcast, ilagay ang source port at password na bigay ng Zeno.</div>
-</details>
+  <button id="closeSettings2" style="width:100%;height:50px;margin-top:14px;background:var(--acc);border-color:var(--acc);color:#fff;font-size:13.5px">Done</button>
+</div>
+</div>
+
+<div class="modal" id="mixSettings" hidden>
+<div class="card sheet" role="dialog" aria-label="Audio Settings">
+  <div class="sheethead"><b>Audio Settings</b><button id="closeMix" aria-label="Close audio settings">✕</button></div>
+  <label style="margin-top:14px">Effects Volume: <b id="fxv">100%</b></label>
+  <input type="range" min="0" max="150" value="100" id="fxVol">
+  <label>Microphone Gain: <b id="mgdb">0.0 dB</b></label>
+  <input type="range" min="0" max="200" value="100" id="micGain">
+  <label for="nrLvl">Mic Noise Reduction</label>
+  <select id="nrLvl">
+    <option value="0">Off</option>
+    <option value="1">Low (light)</option>
+    <option value="2" selected>Medium</option>
+    <option value="3">High (strong)</option>
+  </select>
+  <label>Mic Echo: <b id="echov">25%</b></label>
+  <input type="range" min="0" max="100" value="25" id="echoAmt">
+  <select id="echoTime" style="margin-top:6px">
+    <option value="0.15">Echo: Fast (0.15s)</option>
+    <option value="0.3" selected>Echo: Normal (0.3s)</option>
+    <option value="0.45">Echo: Long (0.45s)</option>
+  </select>
+  <label>Music level while speaking: <b id="duckv">25%</b></label>
+  <input type="range" min="0" max="100" value="25" id="duckLvl">
+  <button id="closeMix2" style="width:100%;height:50px;margin-top:16px;background:var(--acc);border-color:var(--acc);color:#fff;font-size:13.5px">Done</button>
+</div>
+</div>
 
 <div class="decks">
   <div class="card deck" id="deck0">
     <h2>DECK 1</h2>
-    <div class="now" id="now0">Walang kanta</div>
+    <div class="now" id="now0">No track</div>
     <div class="time" id="time0">0:00 / 0:00</div>
     <div class="btns">
       <button data-a="play">▶</button><button data-a="stop">■</button>
       <button data-a="mute">MUTE</button><button data-a="lock" class="lockbtn">LOCK</button>
     </div>
-    <label>Lakas</label><input type="range" min="0" max="100" value="100" data-a="vol">
-    <div class="addrow"><button data-a="add">+ Kanta</button></div>
+    <label>Volume</label><input type="range" min="0" max="100" value="100" data-a="vol">
+    <div class="addrow"><button data-a="add">+ Add Tracks</button></div>
     <ul id="list0"></ul>
     <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac" multiple hidden id="file0">
   </div>
+  <div class="card vgain">
+    <div class="vcol">
+      <span class="vl">Tracks<br>Gain</span>
+      <span class="vslot"></span>
+      <div class="vslide"><input type="range" min="0" max="150" value="100" id="tracksGain" aria-label="Tracks Gain"></div>
+      <span class="vslot"><b id="tgdb" class="vdb">0.0 dB</b></span>
+    </div>
+    <div class="vcol">
+      <span class="vl">Cross<br>fader</span>
+      <span class="vslot"><i class="vtag" style="background:var(--c1)">1</i></span>
+      <div class="vslide"><input type="range" min="0" max="100" value="50" id="cross" class="vcross" aria-label="Crossfader: Deck 1 (top) to Deck 2 (bottom)"></div>
+      <span class="vslot"><i class="vtag" style="background:var(--c2)">2</i></span>
+    </div>
+  </div>
   <div class="card deck" id="deck1">
     <h2>DECK 2</h2>
-    <div class="now" id="now1">Walang kanta</div>
+    <div class="now" id="now1">No track</div>
     <div class="time" id="time1">0:00 / 0:00</div>
     <div class="btns">
       <button data-a="play">▶</button><button data-a="stop">■</button>
       <button data-a="mute">MUTE</button><button data-a="lock" class="lockbtn">LOCK</button>
     </div>
-    <label>Lakas</label><input type="range" min="0" max="100" value="100" data-a="vol">
-    <div class="addrow"><button data-a="add">+ Kanta</button></div>
+    <label>Volume</label><input type="range" min="0" max="100" value="100" data-a="vol">
+    <div class="addrow"><button data-a="add">+ Add Tracks</button></div>
     <ul id="list1"></ul>
     <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac" multiple hidden id="file1">
   </div>
 </div>
 
-<div class="card">
-  <label>Crossfader (Deck 1 ⟷ Deck 2)</label>
-  <input type="range" min="0" max="100" value="50" id="cross">
-  <div class="row" style="margin-top:8px">
+<div class="meter" style="margin:0 0 12px"><i id="meter"></i></div>
+
+<div class="card" id="xfCard">
+  <div class="row" style="margin-top:0">
     <button id="autoBtn">🔀 AUTO-MIX: OFF</button>
     <select id="mixSec">
       <option value="3">Crossfade 3s</option>
@@ -154,43 +236,41 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
       <option value="12">Crossfade 12s</option>
     </select>
   </div>
-  <div class="hint">Kapag ON, awtomatikong magsisimula ang susunod na kanta sa kabilang deck bago matapos ang kasalukuyan.</div>
-  <label>Tracks Gain: <b id="tgdb">0.0 dB</b></label>
-  <input type="range" min="0" max="150" value="100" id="tracksGain">
-  <label>Microphone Gain: <b id="mgdb">0.0 dB</b></label>
-  <input type="range" min="0" max="200" value="100" id="micGain">
-  <label for="nrLvl">Noise Reduction ng Mic</label>
-  <select id="nrLvl">
-    <option value="0">Off</option>
-    <option value="1">Low (banayad)</option>
-    <option value="2" selected>Medium</option>
-    <option value="3">High (matindi)</option>
-  </select>
-  <div class="row" style="margin-top:8px">
-    <button id="micBtn">🎤 MIC: OFF</button>
-    <button id="monBtn">🔈 Pakinggan: ON</button>
+</div>
+
+<div class="card" id="micCard">
+  <div class="row" style="margin-top:0;gap:4px">
+    <button id="duckBtn">🔉
+Auto-duck
+OFF</button>
+    <button id="micBtn">🎤
+MIC
+OFF</button>
+    <button class="big" id="liveBtn">🔴
+GO LIVE</button>
+    <button id="monBtn">🔈
+Monitor
+ON</button>
+    <button id="micMonBtn">🎧
+Hear Mic
+OFF</button>
   </div>
-  <div class="row" style="margin-top:8px"><button id="micMonBtn" style="height:48px;font-size:13px">🎧 Marinig ang Mic: OFF</button></div>
-  <div class="hint">Para marinig ang boses at echo mo: ikonekta muna ang Bluetooth/headphone sa Bluetooth settings ng phone, tapos i-ON ito. May maririnig kang \"pip\" kapag nag-ON; kapag narinig mo iyon, gumagana ang Bluetooth. Huwag gamitin sa speaker ng phone (magfi-feedback).</div>
-  <label>Echo ng Mic: <b id="echov">25%</b></label>
-  <input type="range" min="0" max="100" value="25" id="echoAmt">
-  <select id="echoTime" style="margin-top:6px">
-    <option value="0.15">Echo: Mabilis (0.15s)</option>
-    <option value="0.3" selected>Echo: Normal (0.3s)</option>
-    <option value="0.45">Echo: Mahaba (0.45s)</option>
-  </select>
-  <label class="chk"><input type="checkbox" id="duck" checked> Auto-duck: hinaan ang kanta kapag nagsasalita</label>
-  <label>Lakas ng kanta habang nagsasalita: <b id="duckv">25%</b></label>
-  <input type="range" min="0" max="100" value="25" id="duckLvl">
-  <div class="meter"><i id="meter"></i></div>
+  <div id="status">Not live</div>
+</div>
+
+<div class="card" id="fxCard">
+  <label style="margin-top:0">🔔 Effects (12 slots)</label>
+  <div class="fxgrid" id="fxGrid"></div>
+  <div class="row">
+    <button id="fxEdit" style="height:44px">✎ Edit slots</button>
+    <button id="fxStop" style="height:44px">⏹ Stop all</button>
+  </div>
+  <input type="file" accept="audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac" multiple hidden id="fxFile">
 </div>
 
 
 
-<div class="card">
-  <button class="big" id="liveBtn">🔴 GO LIVE</button>
-  <div id="status">Hindi pa naka-live</div>
-</div>
+
 
 <script>
 const $ = (s) => document.querySelector(s);
@@ -265,13 +345,33 @@ function applyCross() {
 }
 function applyFader(d) { d.fader.gain.value = d.muted ? 0 : d.vol; }
 
+// MARQUEE: gumagalaw ang pamagat kapag mas mahaba kaysa sa kahon
+function mqNode(text) {
+  const w = document.createElement('span'); w.className = 'mqw';
+  const m = document.createElement('span'); m.className = 'mq'; m.textContent = text;
+  w.appendChild(m); return w;
+}
+function mqFit(w) {
+  const m = w.firstChild; if (!m) return;
+  m.classList.remove('run'); m.style.removeProperty('--dist');
+  const over = m.offsetWidth - w.clientWidth;
+  if (over > 2) {
+    m.style.setProperty('--dist', -(over + 12) + 'px');
+    m.style.setProperty('--dur', Math.max(4, (over + 12) / 28 + 2.4) + 's');
+    m.classList.add('run');
+  }
+}
+function mqFitAll(root) { root.querySelectorAll('.mqw').forEach(mqFit); }
+function mqSet(el, text) { el.replaceChildren(mqNode(text)); requestAnimationFrame(() => mqFitAll(el)); }
+window.addEventListener('resize', () => mqFitAll(document));
+
+[0, 1].forEach((i) => mqSet($('#now' + i), 'No track'));
 function renderList(d) {
   const ul = $('#list' + d.i);
   ul.innerHTML = '';
   d.list.forEach((f, k) => {
     const li = document.createElement('li');
-    const t = document.createElement('span');
-    t.textContent = (k + 1) + '. ' + f.name.replace(/\.[^.]+$/, '');
+    const t = mqNode((k + 1) + '. ' + f.name.replace(/\.[^.]+$/, ''));
     const x = document.createElement('b');
     x.className = 'x'; x.textContent = '✕';
     x.onclick = (e) => { e.stopPropagation(); removeTrack(d, k); };
@@ -280,6 +380,7 @@ function renderList(d) {
     li.onclick = () => { load(d, k); play(d); };
     ul.appendChild(li);
   });
+  requestAnimationFrame(() => mqFitAll(ul));
 }
 function load(d, k) {
   if (k < 0 || k >= d.list.length) return;
@@ -287,21 +388,21 @@ function load(d, k) {
   if (d.url) URL.revokeObjectURL(d.url);
   d.url = URL.createObjectURL(d.list[k]);
   d.audio.src = d.url;
-  $('#now' + d.i).textContent = d.list[k].name.replace(/\.[^.]+$/, '');
+  mqSet($('#now' + d.i), d.list[k].name.replace(/\.[^.]+$/, ''));
   renderList(d);
 }
 function clearDeck(d) {
   d.audio.pause(); d.audio.removeAttribute('src'); d.audio.load();
   if (d.url) { URL.revokeObjectURL(d.url); d.url = null; }
   d.idx = -1; d.orphan = false;
-  $('#now' + d.i).textContent = 'Walang kanta';
+  mqSet($('#now' + d.i), 'No track');
   $('#time' + d.i).textContent = '0:00 / 0:00';
   updatePlayBtn(d);
 }
 function removeTrack(d, k) {            // alisin sa listahan (hindi binubura ang file sa phone)
   if (k < 0 || k >= d.list.length) return;
   const playingNow = k === d.idx && !d.orphan && !d.audio.paused;
-  if (playingNow && !confirm('Naka-play pa ang kantang ito. Aalisin lang sa listahan at matatapos pa rin ang tugtog.')) return;
+  if (playingNow && !confirm('This track is still playing. It will only be removed from the list and will finish playing.')) return;
   d.list.splice(k, 1);
   if (k < d.idx || (d.orphan && k === d.idx)) d.idx--;
   else if (k === d.idx && !d.orphan) {
@@ -346,7 +447,7 @@ decks.forEach((d) => {
   const fileIn = $('#file' + d.i);
   fileIn.onchange = () => {            // + Kanta: yung mga napili mo lang
     const files = [...fileIn.files]; fileIn.value = '';
-    addFiles(d, files.filter(isAudio), 'Walang audio file sa napili mo.');
+    addFiles(d, files.filter(isAudio), 'No audio files in your selection.');
   };
   root.addEventListener('click', (e) => {
     const a = e.target.dataset && e.target.dataset.a;
@@ -431,11 +532,11 @@ async function toggleMic() {
   if (micStream) {
     micStream.getTracks().forEach((t) => t.stop());
     micSrc.disconnect(); micStream = null; micSrc = null;
-    btn.textContent = '🎤 MIC: OFF'; btn.classList.remove('on');
+    btn.textContent = '🎤\nMIC\nOFF'; btn.classList.remove('on');
     return;
   }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-    alert('Hindi gumagana ang mic dito. Buksan ang mixer sa https:// link (hindi file) at sa Chrome o Safari mismo, hindi sa loob ng Facebook/Messenger/in-app browser.');
+    alert('The mic does not work here. Open the mixer through an https:// link (not a file) in Chrome or Safari itself, not inside Facebook, Messenger or another in-app browser.');
     return;
   }
   try {
@@ -449,17 +550,17 @@ async function toggleMic() {
     }
   } catch (err) {
     const why = {
-      NotAllowedError: 'Naka-block ang mic. I-tap ang 🔒 sa address bar, Permissions, Microphone, Allow. Tapos i-refresh.',
-      SecurityError: 'Hindi secure ang page. Kailangan ng https:// link.',
-      NotFoundError: 'Walang nahanap na mic sa device.',
-      NotReadableError: 'Ginagamit ng ibang app ang mic. Isara muna ang ibang app (call, recorder, atbp.).',
+      NotAllowedError: 'The mic is blocked. Tap the 🔒 in the address bar, then Permissions, Microphone, Allow. Then refresh.',
+      SecurityError: 'The page is not secure. An https:// link is required.',
+      NotFoundError: 'No microphone was found on this device.',
+      NotReadableError: 'Another app is using the mic. Close other apps first (calls, recorders, etc.).',
     }[err.name] || err.message;
-    alert('Hindi mabuksan ang mic: ' + why);
+    alert('Could not open the mic: ' + why);
     return;
   }
   micSrc = ctx.createMediaStreamSource(micStream);
   micSrc.connect(micIn);
-  btn.textContent = '🎤 MIC: ON'; btn.classList.add('on');
+  btn.textContent = '🎤\nMIC\nON'; btn.classList.add('on');
   micMonLabel();
 }
 $('#micBtn').onclick = toggleMic;
@@ -494,12 +595,17 @@ setInterval(() => {
 }, 20);
 
 // AUTO-DUCK: bumababa ang kanta kapag may boses sa mic, bumabalik kapag tahimik na
-let duckLevel = 0.25, voiceUntil = 0, lastWant = 1;
+let duckLevel = 0.25, voiceUntil = 0, lastWant = 1, duckOn = false;
+$('#duckBtn').onclick = () => {
+  duckOn = !duckOn;
+  $('#duckBtn').textContent = '🔉\nAuto-duck\n' + (duckOn ? 'ON' : 'OFF');
+  $('#duckBtn').classList.toggle('on', duckOn);
+};
 $('#duckLvl').oninput = (e) => { duckLevel = e.target.value / 100; $('#duckv').textContent = e.target.value + '%'; };
 const micBuf = new Float32Array(micAn.fftSize);
 setInterval(() => {
   let want = 1;
-  if (micStream && $('#duck').checked) {
+  if (micStream && duckOn) {
     micAn.getFloatTimeDomainData(micBuf);
     let sum = 0; for (let i = 0; i < micBuf.length; i++) sum += micBuf[i] * micBuf[i];
     const rms = Math.sqrt(sum / micBuf.length), now = performance.now();
@@ -515,12 +621,12 @@ let mon = true;
 $('#monBtn').onclick = () => {
   mon = !mon;
   monitor.gain.value = mon ? 1 : 0;
-  $('#monBtn').textContent = '🔈 Pakinggan: ' + (mon ? 'ON' : 'OFF');
+  $('#monBtn').textContent = '🔈\nMonitor\n' + (mon ? 'ON' : 'OFF');
 };
 
 let micMonOn = false;
 function micMonLabel() {
-  $('#micMonBtn').textContent = '🎧 Marinig ang Mic: ' + (micMonOn ? (micStream ? 'ON' : 'ON (buksan ang 🎤 MIC)') : 'OFF');
+  $('#micMonBtn').textContent = '🎧\nHear Mic\n' + (micMonOn ? (micStream ? 'ON' : 'NEED MIC') : 'OFF');
   $('#micMonBtn').classList.toggle('on', micMonOn);
 }
 function beep() {                         // "pip" na sa headphone lang maririnig: patunay na gumagana ang output (Bluetooth)
@@ -538,8 +644,8 @@ async function reopenMic() {              // habang nagmo-monitor, patay ang ech
     micStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: !micMonOn, noiseSuppression: !micMonOn, autoGainControl: false } });
     micSrc = ctx.createMediaStreamSource(micStream); micSrc.connect(micIn);
   } catch (e) {
-    $('#micBtn').textContent = '🎤 MIC: OFF'; $('#micBtn').classList.remove('on');
-    alert('Hindi na mabuksan ulit ang mic: ' + (e.message || e));
+    $('#micBtn').textContent = '🎤\nMIC\nOFF'; $('#micBtn').classList.remove('on');
+    alert('Could not reopen the mic: ' + (e.message || e));
   }
 }
 $('#micMonBtn').onclick = async () => {
@@ -551,6 +657,96 @@ $('#micMonBtn').onclick = async () => {
   await reopenMic();
   micMonLabel();
 };
+
+// EFFECTS: 8 slot ng jingle/sound effect (kasama sa stream; naka-save sa IndexedDB ng phone)
+const FX_N = 12;
+const fxGain = ctx.createGain(); fxGain.gain.value = 1;
+fxGain.connect(master); fxGain.connect(monitor);
+const fx = Array.from({ length: FX_N }, () => ({ name: '', buf: null, src: null }));
+let fxEdit = false, fxTarget = -1;
+const fxDB = () => new Promise((res, rej) => {
+  const r = indexedDB.open('jfm', 1);
+  r.onupgradeneeded = () => r.result.createObjectStore('fx');
+  r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+});
+async function fxSave(i, name, data) { try { (await fxDB()).transaction('fx', 'readwrite').objectStore('fx').put({ name, data }, i); } catch {} }
+async function fxDel(i) { try { (await fxDB()).transaction('fx', 'readwrite').objectStore('fx').delete(i); } catch {} }
+async function fxLoadAll() {
+  try {
+    const db = await fxDB();
+    await Promise.all([...Array(FX_N).keys()].map((i) => new Promise((res) => {
+      const q = db.transaction('fx').objectStore('fx').get(i);
+      q.onsuccess = async () => {
+        const v = q.result;
+        if (v) { try { fx[i].buf = await ctx.decodeAudioData(v.data.slice(0)); fx[i].name = v.name; } catch {} }
+        res();
+      };
+      q.onerror = () => res();
+    })));
+  } catch {}
+  fxRender();
+}
+function fxStopSlot(i) { const f = fx[i]; if (f.src) { const s = f.src; f.src = null; try { s.stop(); } catch {} } }
+function fxPlay(i) {
+  const f = fx[i]; if (!f.buf) return;
+  fxStopSlot(i);
+  const s = ctx.createBufferSource(); s.buffer = f.buf; s.connect(fxGain);
+  s.onended = () => { if (f.src === s) { f.src = null; fxRender(); } };
+  f.src = s; s.start(); fxRender();
+}
+async function fxSet(i, file) {
+  if (file.size > 15 * 1048576) { alert('That file is too large (max 15MB). Choose a short effect.'); return; }
+  try {
+    const data = await file.arrayBuffer();
+    const buf = await ctx.decodeAudioData(data.slice(0));
+    if (buf.duration > 90) { alert('That file is too long (' + Math.round(buf.duration) + 's). Effects can be up to 90 seconds.'); return; }
+    fxStopSlot(i); fx[i].buf = buf; fx[i].name = file.name.replace(/\.[^.]+$/, '');
+    fxSave(i, fx[i].name, data); fxRender();
+  } catch { alert('Could not read that audio file.'); }
+}
+const FX_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#ec4899', '#14b8a6', '#e5e7eb'];
+function fxRender() {
+  const g = $('#fxGrid'); g.innerHTML = '';
+  fx.forEach((f, i) => {
+    const cell = document.createElement('div'); cell.className = 'fxcell';
+    const b = document.createElement('button');
+    b.className = 'pad' + (f.buf ? '' : ' empty') + (f.src ? ' on' : '');
+    b.style.setProperty('--pc', FX_COLORS[i]);
+    b.setAttribute('aria-label', f.buf ? 'Effect ' + (i + 1) + ': ' + f.name : 'Empty slot ' + (i + 1));
+    b.textContent = f.buf ? String(i + 1) : '+';
+    if (f.buf && fxEdit) {
+      const x = document.createElement('span'); x.className = 'x'; x.textContent = '✕';
+      x.onclick = (e) => { e.stopPropagation(); fxStopSlot(i); f.buf = null; f.name = ''; fxDel(i); fxRender(); };
+      b.appendChild(x);
+    }
+    b.onclick = () => {
+      ctx.resume();
+      if (!f.buf || fxEdit) { fxTarget = i; $('#fxFile').click(); return; }
+      fxPlay(i);
+    };
+    const cap = document.createElement('div'); cap.className = 'cap'; cap.textContent = f.buf ? f.name : '';
+    cell.append(b, cap); g.appendChild(cell);
+  });
+}
+$('#fxFile').onchange = async (e) => {
+  const files = [...e.target.files].filter(isAudio); e.target.value = '';
+  if (!files.length || fxTarget < 0) return;
+  let slot = fxTarget;
+  for (const file of files) {
+    if (slot >= FX_N) break;
+    await fxSet(slot, file);
+    do { slot++; } while (slot < FX_N && fx[slot].buf);   // susunod na bakanteng slot
+  }
+};
+$('#fxEdit').onclick = () => {
+  fxEdit = !fxEdit;
+  $('#fxEdit').textContent = fxEdit ? '✓ Done' : '✎ Edit slots';
+  $('#fxEdit').classList.toggle('on', fxEdit);
+  fxRender();
+};
+$('#fxStop').onclick = () => { for (let i = 0; i < FX_N; i++) fxStopSlot(i); fxRender(); };
+$('#fxVol').oninput = (e) => { fxGain.gain.value = e.target.value / 100; $('#fxv').textContent = e.target.value + '%'; };
+fxRender(); fxLoadAll();
 
 // METER
 const buf = new Uint8Array(analyser.fftSize);
@@ -567,6 +763,26 @@ const Tcp = window.Capacitor && Capacitor.registerPlugin ? Capacitor.registerPlu
 let pending = 0, dropped = 0;
 let ws = null, wake = null, liveSince = 0, timer = null, proc = null, enc = null, q = Promise.resolve();
 const statusEl = $('#status');
+// SETTINGS POPUPS: ⚙ (Output/Encoder) at 🎚 (Audio); nakatago kapag sarado
+function showModal(id, on) {
+  const m = $(id);
+  if (on === !m.hidden) return;
+  m.hidden = !on;
+  document.body.style.overflow = [...document.querySelectorAll('.modal')].some((x) => !x.hidden) ? 'hidden' : '';
+  if (on) { try { history.pushState({ modal: 1 }, ''); } catch {} }
+  else if (history.state && history.state.modal) { try { history.back(); } catch {} }
+}
+const showSettings = (on) => showModal('#out', on);
+$('#gearBtn').onclick = () => showModal('#out', true);
+$('#closeSettings').onclick = $('#closeSettings2').onclick = () => showModal('#out', false);
+$('#mixBtn').onclick = () => showModal('#mixSettings', true);
+$('#closeMix').onclick = $('#closeMix2').onclick = () => showModal('#mixSettings', false);
+document.querySelectorAll('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) showModal('#' + m.id, false); }));   // tap sa labas = isara
+window.addEventListener('popstate', () => {                                                                                                      // Back button ng phone = isara
+  document.querySelectorAll('.modal').forEach((m) => { m.hidden = true; });
+  document.body.style.overflow = '';
+});
+
 function setStatus(t, live) { statusEl.textContent = t; statusEl.className = live ? 'live' : ''; }
 const te = (t) => new TextEncoder().encode(t);
 const b64 = (u) => { let s = ''; for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); };
@@ -575,7 +791,7 @@ function sendBytes(u) {
   if (!ws) return;
   if (pending > 96000) { dropped++; return; }   // ~6s na backlog sa 128k: itapon ang bago imbes na lumaki ang delay/memory
   pending += u.length;
-  q = q.then(() => Tcp.write({ data: b64(u) })).then(() => { pending -= u.length; }).catch((e) => stopLive('Naputol ang koneksyon: ' + (e.message || e)));
+  q = q.then(() => Tcp.write({ data: b64(u) })).then(() => { pending -= u.length; }).catch((e) => stopLive('Connection lost: ' + (e.message || e)));
 }
 function stopLive(msg) {
   const was = ws; ws = null;
@@ -583,24 +799,24 @@ function stopLive(msg) {
   enc = null; clearInterval(timer);
   if (was && Tcp) Tcp.close().catch(() => {});
   if (wake) { wake.release().catch(() => {}); wake = null; }
-  $('#liveBtn').textContent = '🔴 GO LIVE';
+  $('#liveBtn').textContent = '🔴\nGO LIVE';
   $('#liveBtn').classList.remove('live');
-  setStatus(msg || 'Hindi pa naka-live', false);
+  setStatus(msg || 'Not live', false);
 }
 async function goLive() {
-  if (ws) { stopLive('Tapos na ang broadcast'); return; }
+  if (ws) { stopLive('Broadcast ended'); return; }
   const c = getCfg(), miss = [];
   if (!c.host) miss.push('Server/Host');
   if (!c.port || isNaN(c.port) || +c.port < 1 || +c.port > 65535) miss.push('Port');
   if (c.mode === 'icecast' && !c.mount) miss.push('Mount point');
   if (c.mode === 'icecast' && !c.user) miss.push('Username');
   if (!c.password) miss.push('Password');
-  if (miss.length) { $('#out').open = true; setStatus('Kulang pa: ' + miss.join(', '), false); return; }
-  if (!Tcp) { setStatus('Gumagana lang ito sa APK app, hindi sa browser', false); return; }
-  if (!window.lamejs) { setStatus('Wala ang lame.min.js (MP3 encoder)', false); return; }
-  if (!micStream && !confirm('Naka-OFF ang mic mo. Mag-live pa rin nang walang boses?')) { setStatus('Buksan muna ang 🎤 MIC', false); return; }
+  if (miss.length) { showSettings(true); setStatus('Missing: ' + miss.join(', '), false); return; }
+  if (!Tcp) { setStatus('This only works in the APK app, not in a browser', false); return; }
+  if (!window.lamejs) { setStatus('lame.min.js (MP3 encoder) is missing', false); return; }
+  if (!micStream && !confirm('Your mic is OFF. Go live without your voice anyway?')) { setStatus('Turn on 🎤 MIC first', false); return; }
   await ctx.resume();
-  setStatus('Kumokonekta...', false);
+  setStatus('Connecting...', false);
   ws = {}; q = Promise.resolve(); pending = 0; dropped = 0;
   const br = parseInt(c.bitrate, 10) || 128;
   try {
@@ -608,7 +824,7 @@ async function goLive() {
     const rd = async (ms) => (await Tcp.read({ timeoutMs: ms })).text || '';
     if (c.mode === 'shoutcast') {
       await Tcp.write({ data: b64(te(c.password + '\r\n')) });
-      if (!/OK2/i.test(await rd(8000))) throw new Error('Maling password o port ng Shoutcast');
+      if (!/OK2/i.test(await rd(8000))) throw new Error('Wrong Shoutcast password or port');
       await Tcp.write({ data: b64(te('icy-name: JEIANNE FM\r\nicy-pub: 1\r\nicy-br: ' + br + '\r\ncontent-type: audio/mpeg\r\n\r\n')) });
     } else {
       const mount = c.mount.startsWith('/') ? c.mount : '/' + c.mount;
@@ -616,7 +832,7 @@ async function goLive() {
       await Tcp.write({ data: b64(te('PUT ' + mount + ' HTTP/1.1\r\nHost: ' + c.host + ':' + c.port + '\r\nAuthorization: Basic ' + auth +
         '\r\nUser-Agent: JeianneFM\r\nContent-Type: audio/mpeg\r\nIce-Name: JEIANNE FM\r\nIce-Public: 1\r\nIce-Bitrate: ' + br + '\r\n\r\n')) });
       const r = await rd(8000);
-      if (!/^HTTP\/1\.\d (100|200)/.test(r)) throw new Error('Tinanggihan ng Icecast: ' + (r.split('\r\n')[0] || 'walang sagot'));
+      if (!/^HTTP\/1\.\d (100|200)/.test(r)) throw new Error('Rejected by Icecast: ' + (r.split('\r\n')[0] || 'no response'));
     }
     if (!ws) return;
     enc = new lamejs.Mp3Encoder(2, ctx.sampleRate, br);
@@ -629,7 +845,7 @@ async function goLive() {
       if (out.length) sendBytes(out);
     };
     liveSince = Date.now();
-    $('#liveBtn').textContent = '■ TAPUSIN ANG BROADCAST';
+    $('#liveBtn').textContent = '■\nEND LIVE';
     $('#liveBtn').classList.add('live');
     timer = setInterval(() => setStatus('🔴 LIVE  ' + fmt((Date.now() - liveSince) / 1000), true), 1000);
     setStatus('🔴 LIVE', true);
