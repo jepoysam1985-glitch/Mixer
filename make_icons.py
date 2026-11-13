@@ -32,3 +32,18 @@ for d, (s, f) in dens.items():
 os.makedirs(res + '/values', exist_ok=True)
 open(res + '/values/ic_launcher_background.xml', 'w').write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#000000</color>\n</resources>\n')
 print('Icons done')
+
+import re
+import shutil
+pub = 'build-app/android/app/src/main/assets/public'
+idx = pub + '/index.html'
+if os.path.exists(idx):
+    html = open(idx, encoding='utf-8').read()
+    img = '<img src="logo.jpg" alt="" style="width:34px;height:34px;border-radius:50%;vertical-align:middle;margin-right:8px"> '
+    new, n = re.subn(r'<h1>[^<]*JEIANNE FM MIXER</h1>', '<h1>' + img + 'JEIANNE FM MIXER</h1>', html, count=1)
+    if n:
+        open(idx, 'w', encoding='utf-8').write(new)
+        shutil.copy('logo.jpg', pub + '/logo.jpg')
+        print('Logo added to header')
+    else:
+        print('Header not found, logo not added')
