@@ -157,6 +157,13 @@ jobs:
           grep -q RECORD_AUDIO "$M" || { echo "ERROR: Hindi naidagdag ang mic permission"; cat "$M"; exit 1; }
           npx cap sync android
 
+      - name: App icon
+        run: |
+          cat logo.part00 logo.part01 logo.part02 > logo.jpg
+          echo "d4613d63e07af307d0f06b9b6dcbe3fa48c1c7d98a5b2a3b74df176445838b1c  logo.jpg" | sha256sum -c -
+          pip install pillow
+          python3 make_icons.py
+
       - name: Build APK
         working-directory: build-app/android
         run: |
