@@ -160,7 +160,7 @@ jobs:
       - name: App icon
         run: |
           cat logo.part00 logo.part01 logo.part02 > logo.jpg
-          echo "d4613d63e07af307d0f06b9b6dcbe3fa48c1c7d98a5b2a3b74df176445838b1c  logo.jpg" | sha256sum -c -
+          echo "2bfeb02265ebf64cc4efb7e03b488667b9c59a70239cb892cc47df4940b2553f  logo.jpg" | sha256sum -c -
           pip install pillow
           python3 make_icons.py
 

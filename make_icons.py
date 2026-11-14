@@ -1,4 +1,6 @@
 import os
+import re
+import shutil
 from PIL import Image, ImageDraw
 
 res = 'build-app/android/app/src/main/res'
@@ -20,26 +22,25 @@ for d, (s, f) in dens.items():
     for w in ('ic_launcher.webp', 'ic_launcher_round.webp', 'ic_launcher_foreground.webp'):
         if os.path.exists(p + '/' + w):
             os.remove(p + '/' + w)
-    sq = logo.resize((s, s), Image.LANCZOS)
-    sq.save(p + '/ic_launcher.png')
-    circle(sq).save(p + '/ic_launcher_round.png')
+    logo.resize((s, s), Image.LANCZOS).save(p + '/ic_launcher.png')
+    n = int(s * 0.80)
+    rd = Image.new('RGBA', (s, s), (0, 0, 0, 255))
+    rd.paste(logo.resize((n, n), Image.LANCZOS), ((s - n) // 2, (s - n) // 2))
+    circle(rd).save(p + '/ic_launcher_round.png')
     fg = Image.new('RGBA', (f, f), (0, 0, 0, 0))
-    n = int(f * 0.62)
-    inner = circle(logo.resize((n, n), Image.LANCZOS))
-    fg.paste(inner, ((f - n) // 2, (f - n) // 2), inner)
+    m = int(f * 0.56)
+    fg.paste(logo.resize((m, m), Image.LANCZOS), ((f - m) // 2, (f - m) // 2))
     fg.save(p + '/ic_launcher_foreground.png')
 
 os.makedirs(res + '/values', exist_ok=True)
 open(res + '/values/ic_launcher_background.xml', 'w').write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#000000</color>\n</resources>\n')
 print('Icons done')
 
-import re
-import shutil
 pub = 'build-app/android/app/src/main/assets/public'
 idx = pub + '/index.html'
 if os.path.exists(idx):
     html = open(idx, encoding='utf-8').read()
-    img = '<img src="logo.jpg" alt="" style="width:34px;height:34px;border-radius:50%;vertical-align:middle;margin-right:8px"> '
+    img = '<img src="logo.jpg" alt="" style="width:34px;height:34px;border-radius:8px;vertical-align:middle;margin-right:8px"> '
     new, n = re.subn(r'<h1>[^<]*JEIANNE FM MIXER</h1>', '<h1>' + img + 'JEIANNE FM MIXER</h1>', html, count=1)
     if n:
         open(idx, 'w', encoding='utf-8').write(new)
