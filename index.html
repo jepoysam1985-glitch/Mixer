@@ -71,7 +71,7 @@ button.big.live{background:linear-gradient(135deg,#7a0f20,#ff3355);animation:pul
 #status.live{color:#ff6b81;font-weight:800}
 .spec{display:block;width:100%;height:48px;margin:8px 0 2px;background:#0b0b14;border-radius:10px}
 /* EFFECTS pads: bilog, iba-iba ang kulay */
-.fxgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px 4px}
+.fxgrid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px 4px}
 .fxcell{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
 .pad{position:relative;width:100%;max-width:50px;height:auto;aspect-ratio:1/1;border-radius:50%;padding:0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#0b0b14;background:var(--pc);border:2px solid var(--pc);box-shadow:inset 0 -6px 9px #0004,inset 0 4px 6px #fff5,0 3px 9px #0009}
 .pad.empty{background:transparent;border:2px dashed var(--pc);color:var(--pc);box-shadow:none;opacity:.75;font-size:18px;font-weight:400}
@@ -272,10 +272,6 @@ li.cur{background:#14243a;color:#fff;text-shadow:none}
 .logo{display:inline-block;flex:none;background:var(--logo) center/contain no-repeat;border-radius:22%}
 .topbar h1{display:flex;align-items:center;justify-content:center;gap:8px}
 .topbar h1 .logo{width:36px;height:36px;box-shadow:0 0 10px #2e9bff88}
-#appFoot{display:flex;flex-direction:column;align-items:center;gap:6px;margin:18px 0 8px;padding:16px 12px 10px;text-align:center;border-top:1px solid #1d2026}
-#appFoot .logo{width:30px;height:30px;box-shadow:0 0 8px #2e9bff66}
-#appFoot b{font-size:12px;letter-spacing:3px;color:#e6ecf5}
-#appFoot small{font-size:10.5px;letter-spacing:1.5px;color:var(--dim)}
 .credit .logo{display:block;width:30px;height:30px;margin:0 auto 6px;box-shadow:0 0 8px #2e9bff66}
 </style>
 <style>
@@ -462,6 +458,16 @@ li .x.up{background:#1d2530;color:#8fc7ff;min-width:30px}
     <option value="13">Jingle: effect 13</option><option value="14">Jingle: effect 14</option><option value="15">Jingle: effect 15</option>
     <option value="16">Jingle: effect 16</option><option value="17">Jingle: effect 17</option><option value="18">Jingle: effect 18</option>
     <option value="19">Jingle: effect 19</option><option value="20">Jingle: effect 20</option><option value="21">Jingle: effect 21</option><option value="22">Jingle: effect 22</option><option value="23">Jingle: effect 23</option><option value="24">Jingle: effect 24</option>
+    <option value="25">Jingle: effect 25</option><option value="26">Jingle: effect 26</option><option value="27">Jingle: effect 27</option>
+    <option value="28">Jingle: effect 28</option><option value="29">Jingle: effect 29</option><option value="30">Jingle: effect 30</option>
+    <option value="31">Jingle: effect 31</option><option value="32">Jingle: effect 32</option><option value="33">Jingle: effect 33</option>
+    <option value="34">Jingle: effect 34</option><option value="35">Jingle: effect 35</option><option value="36">Jingle: effect 36</option>
+    <option value="37">Jingle: effect 37</option><option value="38">Jingle: effect 38</option><option value="39">Jingle: effect 39</option>
+    <option value="40">Jingle: effect 40</option>
+    <option value="41">Jingle: effect 41</option><option value="42">Jingle: effect 42</option>
+    <option value="43">Jingle: effect 43</option><option value="44">Jingle: effect 44</option><option value="45">Jingle: effect 45</option>
+    <option value="46">Jingle: effect 46</option><option value="47">Jingle: effect 47</option><option value="48">Jingle: effect 48</option>
+    <option value="49">Jingle: effect 49</option><option value="50">Jingle: effect 50</option>
     
   </select>
   <label for="ltLvl">Loudness target (auto level): <b id="alv">off</b></label>
@@ -564,7 +570,7 @@ OPEN</button>
 
 <div class="modal" id="fxModal" hidden>
 <div class="card sheet" id="fxCard" role="dialog" aria-modal="true" aria-label="Effects">
-  <div class="sheethead"><b>🔔 Effects (24 slots)</b><button id="closeFx" aria-label="Close effects" style="width:42px;height:42px;border-radius:50%;font-size:18px">✕</button></div>
+  <div class="sheethead"><b>🔔 Effects (50 slots)</b><button id="closeFx" aria-label="Close effects" style="width:42px;height:42px;border-radius:50%;font-size:18px">✕</button></div>
   <div class="fxgrid" id="fxGrid" style="margin-top:12px"></div>
   <div class="row">
     <button id="fxEdit" style="height:44px">✎ Edit slots</button>
@@ -1392,7 +1398,7 @@ async function reopenMic() {              // habang nagmo-monitor, patay ang ech
 }
 
 // EFFECTS: 12 slot ng jingle/sound effect (kasama sa stream; naka-save sa IndexedDB ng phone)
-const FX_N = 24;
+const FX_N = 50;
 const fxGain = ctx.createGain(); fxGain.gain.value = 1;
 fxGain.connect(master); fxGain.connect(monitor);
 const fx = Array.from({ length: FX_N }, () => ({ name: '', buf: null, src: null }));
@@ -1443,7 +1449,7 @@ async function fxSet(i, file) {
     fxSave(i, fx[i].name, data); fxRender();
   } catch { toast('Could not read that audio file.'); }
 }
-const FX_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#ec4899', '#14b8a6', '#e5e7eb', '#f43f5e', '#fb923c', '#facc15', '#a3e635', '#34d399', '#22d3ee', '#60a5fa', '#a78bfa', '#e879f9', '#f9a8d4', '#fde047', '#2dd4bf'];
+const FX_COLORS = ['#ef4444', '#f97316', '#eab308', '#84cc16', '#22c55e', '#06b6d4', '#3b82f6', '#8b5cf6', '#d946ef', '#ec4899', '#14b8a6', '#e5e7eb', '#f43f5e', '#fb923c', '#facc15', '#a3e635', '#34d399', '#22d3ee', '#60a5fa', '#a78bfa', '#e879f9', '#f9a8d4', '#fde047', '#2dd4bf', '#f0674c', '#ec8913', '#f0e34c', '#adec13', '#83f04c', '#13ec1c', '#4cf090', '#13ecbf', '#4cd5f0', '#1376ec', '#4c59f0', '#5213ec', '#ba4cf0', '#ec13e3', '#f04cac', '#ec1340', '#ea723e', '#d8c518', '#94ea3e', '#18d82b', '#3eeab6', '#189ed8', '#3e4fea', '#7818d8', '#ea3ed8', '#d81851'];
 function fxRender() {
   const g = $('#fxGrid'); g.innerHTML = '';
   fx.forEach((f, i) => {
@@ -2049,7 +2055,6 @@ document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key ==
   draw();
 })();
 </script>
-<footer id="appFoot"><span class="logo" role="img" aria-label="Jeianne FM logo"></span><b>JEIANNE FM</b><small>One of the Best Online Radio Station</small><small>Created By DJBERMAS</small></footer>
 <script>
 // ORASAN: oras ng phone (12-hour, may segundo) at petsa
 (function () {
